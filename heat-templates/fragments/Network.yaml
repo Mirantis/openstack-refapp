@@ -1,0 +1,69 @@
+heat_template_version: queens
+
+parameters:
+
+  app_network_cidr:
+    type: string
+  database_network_cidr:
+    type: string
+  public_network_id:
+    type: string
+    default: 'public'
+
+resources:
+
+  database_network:
+    type: OS::Neutron::Net
+  database_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: database_network }
+      enable_dhcp: true
+      cidr: { get_param: database_network_cidr }
+      dns_nameservers:
+        - 172.18.224.6
+        - 172.18.176.6
+
+  app_network:
+    type: OS::Neutron::Net
+  app_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network: { get_resource: app_network }
+      enable_dhcp: true
+      cidr: { get_param: app_network_cidr }
+      dns_nameservers:
+        - 172.18.224.6
+        - 172.18.176.6
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_network_id }
+
+  database_router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: database_subnet }
+
+  app_router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_resource: app_subnet }
+
+outputs:
+  database_network_id:
+    description: The uuid of database network
+    value: { get_resource: database_network }
+  database_subnet_id:
+    description: The uuid of database subnet
+    value: { get_resource: database_subnet }
+  app_network_id:
+    description: The uuid of app network
+    value: { get_resource: app_network }
+  app_subnet_id:
+    description: The uuid of app subnet
+    value: { get_resource: app_subnet }

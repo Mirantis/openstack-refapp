@@ -1,0 +1,265 @@
+heat_template_version: queens
+
+parameters:
+
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  image:
+    type: string
+    description: Name of image to use for servers
+  flavor:
+    type: string
+    description: Flavor to use for servers
+  app_network_id:
+    type: string
+  app_subnet_id:
+    type: string
+  public_network_id:
+    type: string
+    default: 'public'
+  instance_01_az:
+    type: string
+    default: 'nova'
+  instance_02_az:
+    type: string
+    default: 'nova'
+  instance_03_az:
+    type: string
+    default: 'nova'
+  database_admin_password:
+    type: string
+  metadata_database_vip:
+    type: string
+    default: ''
+  app_docker_image:
+    type: string
+    default: 'httpd:2.4-alpine'
+    description: The link to docker image with App
+  app_port:
+    type: number
+    default: 8000
+  boot_timeout:
+    type: number
+    description: Boot timeout for instance
+    default: 3600
+
+resources:
+
+  software_config_01:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../scripts/service_boot.sh }
+          params:
+            $node_number: '01'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_01:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+      - config: {get_resource: software_config_01}
+
+  software_config_02:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../scripts/service_boot.sh }
+          params:
+            $node_number: '02'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_02:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+      - config: {get_resource: software_config_02}
+
+  software_config_03:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../scripts/service_boot.sh }
+          params:
+            $node_number: '03'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_03:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+      - config: {get_resource: software_config_03}
+
+  server-01:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_01_az }
+      networks:
+        - port: { get_resource: private_server_01_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_01}
+
+  server-02:
+    depends_on:
+      - server-01
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_02_az }
+      networks:
+        - port: { get_resource: private_server_02_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_02}
+
+  server-03:
+    depends_on:
+      - server-01
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_03_az }
+      networks:
+        - port: { get_resource: private_server_03_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_03}
+
+  private_server_01_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  private_server_02_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  private_server_03_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      timeout: { get_param: boot_timeout }
+      count: 3
+
+  lb:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      vip_subnet: { get_param: app_subnet_id }
+
+  listener:
+    type: OS::Octavia::Listener
+    properties:
+      loadbalancer: {get_resource: lb}
+      protocol: HTTP
+      protocol_port: {get_param: app_port}
+
+  pool:
+    type: OS::Octavia::Pool
+    properties:
+      listener: {get_resource: listener}
+      lb_algorithm: ROUND_ROBIN
+      protocol: HTTP
+      session_persistence:
+        type: SOURCE_IP
+
+  lb_monitor:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      pool: { get_resource: pool }
+      type: HTTP
+      delay: 5
+      max_retries: 5
+      timeout: 5
+
+  pool_member1:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-01, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  pool_member2:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-02, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  pool_member3:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-03, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  # assign a floating ip address to the load balancer
+  # pool.
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: {get_param: public_network_id}
+      port_id: {get_attr: [lb, vip_port_id]}
+
+outputs:
+  app_private_ips:
+    description: Private IP addresses of app nodes
+    value: [ { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] } ]
+  app_vip:
+    description: VIP address of app
+    value: { get_attr: [ lb_floating, floating_ip_address ] }

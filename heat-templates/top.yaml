@@ -1,0 +1,84 @@
+heat_template_version: queens
+
+parameters:
+  database_image:
+    type: string
+    description: Name of image to use for servers
+    default: 'bionic-server-cloudimg-amd64-20190612'
+  database_network_cidr:
+    type: string
+    description: The CIDR of database network.
+    default: '10.10.10.0/24'
+  database_admin_password:
+    type: string
+    description: The root password for database
+    default: 'r00tme'
+  app_network_cidr:
+    type: string
+    description: The CIDR of application network.
+    default: '10.10.11.0/24'
+  cluster_public_key:
+    type: string
+    default: 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCp0evjOaK8c8SKYK4r2+0BN7g+8YSvQ2n8nFgOURCyvkJqOHi1qPGZmuN0CclYVdVuZiXbWw3VxRbSW3EH736VzgY1U0JmoTiSamzLHaWsXvEIW8VCi7boli539QJP0ikJiBaNAgZILyCrVPN+A6mfqtacs1KXdZ0zlMq1BPtFciR1JTCRcVs5vP2Wwz5QtY2jMIh3aiwkePjMTQPcfmh1TkOlxYu5IbQyZ3G1ahA0mNKI9a0dtF282av/F6pwB/N1R1nEZ/9VtcN2I1mf1NW/tTHEEcTzXYo1R/8K9vlqAN8QvvGLZtZduGviNVNoNWvoxaXxDt8CPv2B2NCdQFZp'
+  database_flavor:
+    type: string
+    default: 'a1.large' #vcpu: 2, RAM: 4Gb, disk: 80Gb
+  public_network_id:
+    type: string
+    default: 'public'
+  app_docker_image:
+    type: string
+    default: 'docker-dev-kaas-local.docker.mirantis.net/openstack/openstack-refapp:0.0.1.dev1'
+    description: The link to docker image with App
+resources:
+  key_pair:
+    type: OS::Nova::KeyPair
+    properties:
+      name: { get_param: "OS::stack_name" }
+      public_key: { get_param: cluster_public_key}
+      save_private_key: false
+
+  network:
+    type: ./fragments/Network.yaml
+    properties:
+      database_network_cidr: { get_param: database_network_cidr }
+      app_network_cidr: { get_param: app_network_cidr }
+      public_network_id: { get_param: public_network_id }
+
+  database:
+    type: ./fragments/DatabaseInstances.yaml
+    depends_on:
+      - key_pair
+    properties:
+      key_name: { get_param: "OS::stack_name" }
+      image: { get_param: database_image }
+      flavor: { get_param: database_flavor }
+      database_network_id: { get_attr: [network, database_network_id ] }
+      database_subnet_id: { get_attr: [network, database_subnet_id ] }
+      database_admin_password: { get_param: database_admin_password }
+
+  app:
+    type: ./fragments/AppInstances.yaml
+    depends_on:
+      - key_pair
+    properties:
+      key_name: { get_param: "OS::stack_name" }
+      image: { get_param: database_image }
+      flavor: { get_param: database_flavor }
+      database_admin_password: { get_param: database_admin_password }
+      app_network_id: { get_attr: [network, app_network_id ] }
+      app_subnet_id: { get_attr: [network, app_subnet_id ] }
+      public_network_id: { get_param: public_network_id }
+      metadata_database_vip: { get_attr: [database, database_vip] }
+      app_docker_image: { get_param: app_docker_image }
+
+outputs:
+  database_private_ips:
+    description: Private IP addresses of the deployed database instances
+    value: { get_attr: [database, database_private_ips] }
+  app_private_ips:
+    description: Private IP addresses of the deployed app instances
+    value: { get_attr: [database, app_private_ips] }
+  app_vip:
+    description: VIP address of application
+    value: { get_attr: [app, app_vip] }
