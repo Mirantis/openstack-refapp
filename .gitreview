@@ -1,4 +1,6 @@
 [gerrit]
-host=gerrit.mcp.mirantis.net
+host=gerrit.mcp.mirantis.com
 port=29418
 project=openstack/openstack-refapp.git
+defaultremote=origin
+defaultbranch=master
