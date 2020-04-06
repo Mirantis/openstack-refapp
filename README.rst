@@ -108,3 +108,9 @@ Show record by its id::
 
     $ curl http://<host:port>/records/2
     {"record": {"id": 2, "created_at": "2020-04-06T12:12:52.000", "host": "f1f66c9fb4b3", "data": null}}
+
+
+Used external components
+========================
+
+`wait-for` script courtesy of https://github.com/Eficode/wait-for (MIT License)

@@ -1,0 +1,30 @@
+version: '3'
+services:
+  database:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_USER: refapp
+      MYSQL_PASSWORD: supersecret
+      MYSQL_DATABASE: refapp
+    volumes:
+      - refapp-mysql:/var/lib/mysql
+  api:
+    build: .
+    environment:
+      OS_REFAPP_DB_URL: mysql+pymysql://refapp:supersecret@database:3306/refapp
+    entrypoint:
+      - "./wait-for"
+      - "database:3306"
+      - "--timeout=60"
+      - "--"
+      - "gunicorn"
+      - "-c"
+      - "gunicorn.conf.py"
+      - "openstack_refapp.app:create_app()"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+volumes:
+  refapp-mysql:
