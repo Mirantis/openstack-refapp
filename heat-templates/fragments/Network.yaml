@@ -9,6 +9,8 @@ parameters:
   public_network_id:
     type: string
     default: 'public'
+  dns_nameservers:
+    type: json
 
 resources:
 
@@ -20,9 +22,7 @@ resources:
       network: { get_resource: database_network }
       enable_dhcp: true
       cidr: { get_param: database_network_cidr }
-      dns_nameservers:
-        - 172.18.224.6
-        - 172.18.176.6
+      dns_nameservers: { get_param: dns_nameservers }
 
   app_network:
     type: OS::Neutron::Net
@@ -32,9 +32,7 @@ resources:
       network: { get_resource: app_network }
       enable_dhcp: true
       cidr: { get_param: app_network_cidr }
-      dns_nameservers:
-        - 172.18.224.6
-        - 172.18.176.6
+      dns_nameservers: { get_param: dns_nameservers }
 
   router:
     type: OS::Neutron::Router
