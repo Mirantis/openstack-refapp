@@ -33,6 +33,9 @@ parameters:
   dns_nameservers:
     type: json
     default: []
+  app_port:
+    type: number
+    default: 8000
 resources:
   key_pair:
     type: OS::Nova::KeyPair
@@ -75,6 +78,7 @@ resources:
       public_network_id: { get_param: public_network_id }
       metadata_database_vip: { get_attr: [database, database_vip] }
       app_docker_image: { get_param: app_docker_image }
+      app_port: { get_param: app_port }
 
 outputs:
   database_private_ips:
@@ -86,3 +90,10 @@ outputs:
   app_vip:
     description: VIP address of application
     value: { get_attr: [app, app_vip] }
+  app_url:
+    description: API url for the reference application
+    value:
+      make_url:
+        scheme: http
+        host: { get_attr: [app, app_vip] }
+        port: { get_param: app_port }

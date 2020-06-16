@@ -187,7 +187,7 @@ EOF
 
 function install_app {
     install_docker
-    docker run --restart=always -dit -p ${APP_PORT}:${APP_PORT} --hostname $(hostname) -e OS_REFAPP_DB_URL="mysql+pymysql://${APP_DATABASE_USER}:${APP_DATABASE_PASSWORD}@${DATABASE_VIP}:3306/refapp" $APP_DOCKER_IMAGE
+    docker run --restart=always -dit -p ${APP_PORT}:8000 --hostname $(hostname) -e OS_REFAPP_DB_URL="mysql+pymysql://${APP_DATABASE_USER}:${APP_DATABASE_PASSWORD}@${DATABASE_VIP}:3306/refapp" $APP_DOCKER_IMAGE
 }
 
 case "$SERVICE_TYPE" in
