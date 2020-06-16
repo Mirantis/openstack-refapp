@@ -82,7 +82,7 @@ outputs:
     value: { get_attr: [database, database_private_ips] }
   app_private_ips:
     description: Private IP addresses of the deployed app instances
-    value: { get_attr: [database, app_private_ips] }
+    value: { get_attr: [app, app_private_ips] }
   app_vip:
     description: VIP address of application
     value: { get_attr: [app, app_vip] }
