@@ -3,6 +3,6 @@ ADD . /opt/app
 WORKDIR /opt/app
 RUN apk add git && \
     pip3 install .[mysql,pgsql,serve] && \
-    sh -c "echo -e \"LABELS:\n  IMAGE_TAG: $(pip freeze | awk -F '==' '/^openstack-refapp=/ {print $2}')\" > /dockerimage_metadata"
+    sh -c "echo -e \"LABELS:\n  IMAGE_TAG: $(pip3 freeze | awk -F '==' '/^openstack-refapp=/ {print $2}')\" > /dockerimage_metadata"
 
-ENTRYPOINT gunicorn -c gunicorn.conf.py "openstack_refapp.app:create_app()"
+CMD ["/usr/local/bin/gunicorn", "-c", "/opt/app/gunicorn.conf.py", "openstack_refapp.app:create_app()"]
