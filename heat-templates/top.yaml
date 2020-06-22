@@ -28,7 +28,7 @@ parameters:
     default: 'public'
   app_docker_image:
     type: string
-    default: 'docker-dev-kaas-local.docker.mirantis.net/openstack/openstack-refapp:0.0.1.dev1'
+    default: 'docker-dev-kaas-local.docker.mirantis.net/openstack/openstack-refapp:0.0.1.dev13'
     description: The link to docker image with App
   dns_nameservers:
     type: json
