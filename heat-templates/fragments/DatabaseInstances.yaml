@@ -228,7 +228,7 @@ resources:
     type: OS::Octavia::Pool
     properties:
       listener: {get_resource: listener}
-      lb_algorithm: ROUND_ROBIN
+      lb_algorithm: SOURCE_IP
       protocol: TCP
       session_persistence:
         type: SOURCE_IP
