@@ -1,6 +1,7 @@
 import logging
 
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 import falcon
 import falcon_sqla
 
@@ -9,7 +10,7 @@ from . import models
 from . import records
 from . import root
 
-db_engine = create_engine(conf.DB_URL)
+db_engine = create_engine(conf.DB_URL, poolclass=NullPool)
 models.init(db_engine)
 sa_manager = falcon_sqla.Manager(db_engine)
 
