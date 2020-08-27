@@ -63,6 +63,7 @@ resources:
       database_network_id: { get_attr: [network, database_network_id ] }
       database_subnet_id: { get_attr: [network, database_subnet_id ] }
       database_admin_password: { get_param: database_admin_password }
+      public_network_id: { get_param: public_network_id }
 
   app:
     type: ./fragments/AppInstances.yaml
@@ -90,6 +91,12 @@ outputs:
   app_vip:
     description: VIP address of application
     value: { get_attr: [app, app_vip] }
+  app_floating_ips:
+    description: App instances floating IPs
+    value: { get_attr: [app, app_floating_ips] }
+  database_floating_ips:
+    description: Database instances floating IPs
+    value: { get_attr: [database, database_floating_ips] }
   app_url:
     description: API url for the reference application
     value:

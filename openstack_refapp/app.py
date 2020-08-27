@@ -21,7 +21,9 @@ logging.basicConfig(
 
 
 def create_app():
-    app = falcon.API(middleware=[sa_manager.middleware],)
+    app = falcon.API(
+        middleware=[sa_manager.middleware],
+    )
     app.add_route("/", root.RootResource())
     app.add_route("/records", records.RecordResourceCollection())
     app.add_route("/records/{id}", records.RecordResource())

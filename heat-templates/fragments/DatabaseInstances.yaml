@@ -15,6 +15,8 @@ parameters:
     type: string
   database_subnet_id:
     type: string
+  public_network_id:
+    type: string
   instance_01_az:
     type: string
     default: 'nova'
@@ -167,6 +169,24 @@ resources:
       fixed_ips:
         - subnet: { get_param: database_subnet_id  }
 
+  server_01_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_resource: private_server_01_port }
+
+  server_02_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_resource: private_server_02_port }
+
+  server_03_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_resource: private_server_03_port }
+
   vol_01:
     type: OS::Cinder::Volume
     properties:
@@ -274,3 +294,6 @@ outputs:
   database_vip:
     description: VIP address of database
     value: { get_attr: [lb, vip_address ] }
+  database_floating_ips:
+    description: Database instances floating IPs
+    value: [ {get_attr: [ server_01_floating_ip, floating_ip_address ]}, {get_attr: [ server_02_floating_ip, floating_ip_address ]}, {get_attr: [ server_03_floating_ip, floating_ip_address ]}]
