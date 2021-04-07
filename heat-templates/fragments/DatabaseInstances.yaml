@@ -48,7 +48,7 @@ resources:
           template: { get_file: ../scripts/service_boot.sh }
           params:
             $node_number: '01'
-            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $wait_condition_notify: { get_attr: [ wait_handle_01, curl_cli ] }
             $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
             $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
             $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
@@ -70,7 +70,7 @@ resources:
           template: { get_file: ../scripts/service_boot.sh }
           params:
             $node_number: '02'
-            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $wait_condition_notify: { get_attr: [ wait_handle_0x, curl_cli ] }
             $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
             $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
             $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
@@ -92,7 +92,7 @@ resources:
           template: { get_file: ../scripts/service_boot.sh }
           params:
             $node_number: '03'
-            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $wait_condition_notify: { get_attr: [ wait_handle_0x, curl_cli ] }
             $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
             $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
             $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
@@ -120,6 +120,7 @@ resources:
   server-02:
     depends_on:
       - server-01
+      - wait_handle_01
     type: OS::Nova::Server
     properties:
       image: { get_param: image }
@@ -134,6 +135,7 @@ resources:
   server-03:
     depends_on:
       - server-01
+      - wait_handle_01
     type: OS::Nova::Server
     properties:
       image: { get_param: image }
@@ -223,14 +225,23 @@ resources:
       volume_id: { get_resource: vol_03 }
       mountpoint: /dev/vdb
 
-  wait_handle:
+  wait_handle_01:
     type: OS::Heat::WaitConditionHandle
-  wait_condition:
+  wait_condition_01:
     type: OS::Heat::WaitCondition
     properties:
-      handle: { get_resource: wait_handle }
+      handle: { get_resource: wait_handle_01 }
       timeout: { get_param: boot_timeout }
-      count: 3
+      count: 1
+
+  wait_handle_0x:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition_0x:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle_0x }
+      timeout: { get_param: boot_timeout }
+      count: 2
 
   lb:
     type: OS::Octavia::LoadBalancer
