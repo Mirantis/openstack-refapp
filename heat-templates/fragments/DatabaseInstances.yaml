@@ -119,8 +119,7 @@ resources:
 
   server-02:
     depends_on:
-      - server-01
-      - wait_handle_01
+      - wait_condition_01
     type: OS::Nova::Server
     properties:
       image: { get_param: image }
@@ -134,8 +133,7 @@ resources:
 
   server-03:
     depends_on:
-      - server-01
-      - wait_handle_01
+      - wait_condition_01
     type: OS::Nova::Server
     properties:
       image: { get_param: image }
@@ -228,6 +226,8 @@ resources:
   wait_handle_01:
     type: OS::Heat::WaitConditionHandle
   wait_condition_01:
+    depends_on:
+      - server-01
     type: OS::Heat::WaitCondition
     properties:
       handle: { get_resource: wait_handle_01 }
@@ -237,6 +237,9 @@ resources:
   wait_handle_0x:
     type: OS::Heat::WaitConditionHandle
   wait_condition_0x:
+    depends_on:
+      - server-02
+      - server-03
     type: OS::Heat::WaitCondition
     properties:
       handle: { get_resource: wait_handle_0x }
