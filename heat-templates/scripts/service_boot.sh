@@ -177,7 +177,7 @@ function install_docker {
     cat <<EOF > /etc/docker/daemon.json
 {
   "default-address-pools": [
-    { "base": "192.168.0.0", "size": 24 }
+    { "base": "192.168.0.0/24", "size": 24 }
   ]
 }
 EOF
