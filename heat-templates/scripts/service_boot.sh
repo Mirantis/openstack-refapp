@@ -73,7 +73,7 @@ function wait_condition_send {
 
 function install_required_packages {
     function install_retry {
-        apt update
+        apt update && \
         export DEBIAN_FRONTEND=noninteractive; apt install -y apt-transport-https ca-certificates curl software-properties-common jq unzip atop iptables-persistent
     }
     retry 10 "Failed to install required packages" install_retry
@@ -82,9 +82,9 @@ function install_required_packages {
 
 function install_mariadb {
     function install_retry {
-        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
-        add-apt-repository 'deb [arch=amd64] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu bionic main'
-        apt update
+        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 && \
+        add-apt-repository 'deb [arch=amd64] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu bionic main' && \
+        apt update && \
         apt install -y mariadb-server mariadb-client rsync
     }
     retry 10 "Failed to install docker" install_retry
