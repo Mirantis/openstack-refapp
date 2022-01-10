@@ -26,6 +26,9 @@ parameters:
   instance_03_az:
     type: string
     default: 'nova'
+  instance_04_az:
+    type: string
+    default: 'nova'
   database_admin_password:
     type: string
   metadata_database_vip:
@@ -42,6 +45,16 @@ parameters:
     type: number
     description: Boot timeout for instance
     default: 3600
+  one_more_app_listener:
+    type: string
+    description: You can specify "yes" to deploy the stack with one more app LB pool member.
+    default: 'no'
+
+conditions:
+  deploy_additional_app_listener:
+    equals:
+    - get_param: one_more_app_listener
+    - 'yes'
 
 resources:
 
@@ -120,6 +133,33 @@ resources:
       parts:
       - config: {get_resource: software_config_03}
 
+  software_config_04:
+    type: OS::Heat::SoftwareConfig
+    condition: deploy_additional_app_listener
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../scripts/service_boot.sh }
+          params:
+            $node_number: '04'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_04:
+    type: "OS::Heat::MultipartMime"
+    condition: deploy_additional_app_listener
+    properties:
+      parts:
+      - config: {get_resource: software_config_04}
+
   server-01:
     type: OS::Nova::Server
     properties:
@@ -160,6 +200,21 @@ resources:
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_03}
 
+  server-04:
+    depends_on:
+      - server-01
+    type: OS::Nova::Server
+    condition: deploy_additional_app_listener
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_04_az }
+      networks:
+        - port: { get_resource: private_server_04_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_04}
+
   private_server_01_port:
     type: OS::Neutron::Port
     properties:
@@ -184,6 +239,15 @@ resources:
       fixed_ips:
         - subnet: { get_param: app_subnet_id }
 
+  private_server_04_port:
+    type: OS::Neutron::Port
+    condition: deploy_additional_app_listener
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
   server_01_floating_ip:
     type: OS::Neutron::FloatingIP
     properties:
@@ -202,6 +266,13 @@ resources:
       floating_network_id: { get_param: public_network_id }
       port_id: { get_resource: private_server_03_port }
 
+  server_04_floating_ip:
+    type: OS::Neutron::FloatingIP
+    condition: deploy_additional_app_listener
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_resource: private_server_04_port }
+
   wait_handle:
     type: OS::Heat::WaitConditionHandle
   wait_condition:
@@ -209,7 +280,11 @@ resources:
     properties:
       handle: { get_resource: wait_handle }
       timeout: { get_param: boot_timeout }
-      count: 3
+      count:
+        if:
+          - deploy_additional_app_listener
+          - 4
+          - 3
 
   lb:
     type: OS::Octavia::LoadBalancer
@@ -263,6 +338,15 @@ resources:
       protocol_port: {get_param: app_port}
       subnet: { get_param: app_subnet_id }
 
+  pool_member4:
+    type: OS::Octavia::PoolMember
+    condition: deploy_additional_app_listener
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-04, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
   # assign a floating ip address to the load balancer
   # pool.
   lb_floating:
@@ -274,10 +358,18 @@ resources:
 outputs:
   app_private_ips:
     description: Private IP addresses of app nodes
-    value: [ { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] } ]
+    value:
+      if:
+        - deploy_additional_app_listener
+        - [ { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_04_port, fixed_ips, 0, ip_address] } ]
+        - [ { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] } ]
   app_vip:
     description: VIP address of app
     value: { get_attr: [ lb_floating, floating_ip_address ] }
   app_floating_ips:
     description: App instances floating IPs
-    value: [ {get_attr: [ server_01_floating_ip, floating_ip_address ]}, {get_attr: [ server_02_floating_ip, floating_ip_address ]}, {get_attr: [ server_03_floating_ip, floating_ip_address ]}]
+    value:
+      if:
+        - deploy_additional_app_listener
+        - [ {get_attr: [ server_01_floating_ip, floating_ip_address ]}, {get_attr: [ server_02_floating_ip, floating_ip_address ]}, {get_attr: [ server_03_floating_ip, floating_ip_address ]}, {get_attr: [ server_04_floating_ip, floating_ip_address ]} ]
+        - [ {get_attr: [ server_01_floating_ip, floating_ip_address ]}, {get_attr: [ server_02_floating_ip, floating_ip_address ]}, {get_attr: [ server_03_floating_ip, floating_ip_address ]} ]

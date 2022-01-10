@@ -36,6 +36,10 @@ parameters:
   app_port:
     type: number
     default: 8000
+  one_more_app_listener:
+    type: string
+    description: You can specify "yes" to deploy the stack with one more app LB pool member.
+    default: 'no'
 resources:
   key_pair:
     type: OS::Nova::KeyPair
@@ -80,6 +84,7 @@ resources:
       metadata_database_vip: { get_attr: [database, database_vip] }
       app_docker_image: { get_param: app_docker_image }
       app_port: { get_param: app_port }
+      one_more_app_listener: { get_param: one_more_app_listener }
 
 outputs:
   database_private_ips:
