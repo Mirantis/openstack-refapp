@@ -190,12 +190,29 @@ function install_app {
     docker run --restart=always -dit -p ${APP_PORT}:8000 --hostname $(hostname) -e OS_REFAPP_DB_URL="mysql+pymysql://${APP_DATABASE_USER}:${APP_DATABASE_PASSWORD}@${DATABASE_VIP}:3306/refapp" $APP_DOCKER_IMAGE
 }
 
+function disable_apt_daily {
+    echo 'APT::Periodic::Unattended-Upgrade "0";' > /etc/apt/apt.conf.d/20auto-upgrades
+    echo 'APT::Periodic::Update-Package-Lists "0";' >> /etc/apt/apt.conf.d/20auto-upgrades
+    apt remove -y unattended-upgrades
+    echo "" > /etc/crontab
+    for TIMER in apt-daily-upgrade.timer apt-daily.timer systemd-tmpfiles-clean.timer motd-news.timer fstrim.timer; do
+        systemctl stop ${TIMER}
+        systemctl disable ${TIMER}
+    done
+}
+
+function common_configuration {
+    disable_apt_daily
+}
+
 case "$SERVICE_TYPE" in
     database)
+        common_configuration
         mount_drives
         install_database
         ;;
     app)
+        common_configuration
         install_app
         ;;
     *)
