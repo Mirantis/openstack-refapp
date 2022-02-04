@@ -13,6 +13,10 @@ parameters:
     type: string
     description: The root password for database
     default: 'r00tme'
+  database_disk:
+    type: string
+    description: Dedicated disk for database
+    default: '/dev/vdb'
   app_network_cidr:
     type: string
     description: The CIDR of application network.
@@ -67,6 +71,7 @@ resources:
       database_network_id: { get_attr: [network, database_network_id ] }
       database_subnet_id: { get_attr: [network, database_subnet_id ] }
       database_admin_password: { get_param: database_admin_password }
+      database_disk: { get_param: database_disk }
       public_network_id: { get_param: public_network_id }
 
   app:

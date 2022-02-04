@@ -13,6 +13,7 @@ NODE_03_IP=$node_03_ip
 DATABASE_NETWORK_CIDR=$database_network_cidr
 DATABASE_ADMIN_PASSWORD=$database_admin_password
 DATABASE_VIP=$database_vip
+DATABASE_DISK=$database_disk
 SERVICE_TYPE=$service_type
 APP_DOCKER_IMAGE=$app_docker_image
 APP_PORT=$app_port
@@ -20,7 +21,7 @@ APP_PORT=$app_port
 # End of block
 #
 DATABASE_ADMIN_PASSWORD=${DATABASE_ADMIN_PASSWORD:-"r00tme"}
-DATABASE_DISK=${DATABASE_DISK:-"/dev/vdc"}
+DATABASE_DISK=${DATABASE_DISK:-"/dev/vdb"}
 APP_DATABASE_NAME=${APP_DATABASE_NAME:-"refapp"}
 APP_DATABASE_USER=${APP_DATABASE_USER:-"refapp"}
 APP_DATABASE_PASSWORD=${APP_DATABASE_PASSWORD:-"refapp"}
@@ -158,7 +159,7 @@ function mount_drives {
         mkdir /var/lib/mysql
     fi
     if ! grep -q "${DATABASE_DISK}" /etc/fstab; then
-        mount /dev/vdc /var/lib/mysql
+        mount ${DATABASE_DISK} /var/lib/mysql
         echo "${DATABASE_DISK}    /var/lib/mysql   ext4    defaults    0 0" >> /etc/fstab
     fi
 }
