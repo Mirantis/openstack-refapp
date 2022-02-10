@@ -83,7 +83,7 @@ function install_required_packages {
 function install_mariadb {
     function install_retry {
         apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 && \
-        add-apt-repository 'deb [arch=amd64] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu bionic main' && \
+        add-apt-repository 'deb [arch=amd64] http://mirrors.digitalocean.com/mariadb/repo/10.4/ubuntu bionic main' && \
         apt update && \
         apt install -y mariadb-server mariadb-client rsync
     }
