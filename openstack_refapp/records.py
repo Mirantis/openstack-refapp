@@ -49,5 +49,5 @@ class RecordResource:
         if result:
             resp.media = result.to_dict()
         else:
-            LOG.info("No Record with id {id} found")
+            LOG.info(f"No Record with id {id} found")
             resp.status = falcon.HTTP_404
