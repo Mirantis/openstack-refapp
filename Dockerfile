@@ -10,6 +10,7 @@ RUN pip3 wheel --wheel-dir /opt/wheels --find-links /opt/wheels /opt/app[mysql,p
 FROM $FROM
 
 COPY --from=builder /opt/wheels /opt/wheels
+COPY --from=builder /opt/app /opt/app
 RUN pip3 install --no-index --no-cache --find-links /opt/wheels openstack-refapp[mysql,pgsql,serve]
 RUN sh -c "echo -e \"LABELS:\n  IMAGE_TAG: $(python3 -c 'from openstack_refapp import version; print(version.release_string)')\" > /dockerimage_metadata"
 RUN rm -rvf /opt/wheels
