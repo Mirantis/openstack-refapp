@@ -58,6 +58,14 @@ conditions:
 
 resources:
 
+  boot_config:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        write_files:
+        - path: /tmp/.service_lib
+          content: { get_file: ../scripts/service_lib }
+
   software_config_01:
     type: OS::Heat::SoftwareConfig
     properties:
@@ -81,6 +89,7 @@ resources:
     type: "OS::Heat::MultipartMime"
     properties:
       parts:
+      - config: {get_resource: boot_config}
       - config: {get_resource: software_config_01}
 
   software_config_02:
@@ -106,6 +115,7 @@ resources:
     type: "OS::Heat::MultipartMime"
     properties:
       parts:
+      - config: {get_resource: boot_config}
       - config: {get_resource: software_config_02}
 
   software_config_03:
@@ -131,6 +141,7 @@ resources:
     type: "OS::Heat::MultipartMime"
     properties:
       parts:
+      - config: {get_resource: boot_config}
       - config: {get_resource: software_config_03}
 
   software_config_04:
@@ -158,6 +169,7 @@ resources:
     condition: deploy_additional_app_listener
     properties:
       parts:
+      - config: {get_resource: boot_config}
       - config: {get_resource: software_config_04}
 
   server-01:
