@@ -16,7 +16,7 @@ parameters:
   database_disk:
     type: string
     description: Dedicated disk for database
-    default: '/dev/vdb'
+    default: 'auto'
   app_network_cidr:
     type: string
     description: The CIDR of application network.

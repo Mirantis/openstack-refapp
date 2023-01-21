@@ -152,15 +152,44 @@ function init_refapp_database {
 }
 
 function mount_drives {
-    if ! lsblk -f ${DATABASE_DISK} |grep -q ext4; then
-        mkfs.ext4 ${DATABASE_DISK}
+    local database_disk=${DATABASE_DISK}
+    local disk_name
+    local disk_size
+    local disk_type
+    local disk_label
+    local disk_mountpoint
+
+    if [[ ${DATABASE_DISK} == "auto" ]]; then
+        lsblk -o name,size,type,label,mountpoint |grep -vw NAME |grep "^[a-z]" |while read -r line; do
+            disk_name=$(echo $line |awk '{print $1}')
+            disk_size=$(echo $line |awk '{print $2}')
+            disk_type=$(echo $line |awk '{print $3}')
+            disk_label=$(echo $line |awk '{print $4}')
+            disk_mountpoint=$(echo $line |awk '{print $5}')
+            if [[ $disk_type != "disk" || $disk_mountpoint != "" || $disk_label == "config-2" ]]; then
+                continue
+            fi
+            if [[ $(lsblk -o name |grep $disk_name | wc -l) -gt 1 ]]; then
+                continue
+            fi
+            database_disk="/dev/${disk_name}"
+            break
+        done
+    fi
+    if [[ $database_disk == "auto" ]]; then
+        echo "Failed to detect database disk."
+        exit 1
+    fi
+
+    if ! lsblk -f ${database_disk} |grep -q ext4; then
+        mkfs.ext4 ${database_disk}
     fi
     if [ ! -d /var/lib/mysql ]; then
         mkdir /var/lib/mysql
     fi
-    if ! grep -q "${DATABASE_DISK}" /etc/fstab; then
-        mount ${DATABASE_DISK} /var/lib/mysql
-        echo "${DATABASE_DISK}    /var/lib/mysql   ext4    defaults    0 0" >> /etc/fstab
+    if ! grep -q "${database_disk}" /etc/fstab; then
+        mount ${database_disk} /var/lib/mysql
+        echo "${database_disk}    /var/lib/mysql   ext4    defaults    0 0" >> /etc/fstab
     fi
 }
 
