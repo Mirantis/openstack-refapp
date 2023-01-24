@@ -160,7 +160,7 @@ function mount_drives {
     local disk_mountpoint
 
     if [[ ${DATABASE_DISK} == "auto" ]]; then
-        lsblk -o name,size,type,label,mountpoint |grep -vw NAME |grep "^[a-z]" |while read -r line; do
+        while read -r line; do
             disk_name=$(echo $line |awk '{print $1}')
             disk_size=$(echo $line |awk '{print $2}')
             disk_type=$(echo $line |awk '{print $3}')
@@ -174,9 +174,9 @@ function mount_drives {
             fi
             database_disk="/dev/${disk_name}"
             break
-        done
+        done <<< "$(lsblk -o name,size,type,label,mountpoint |grep -vw NAME |grep "^[a-z]")"
     fi
-    if [[ $database_disk == "auto" ]]; then
+    if [[ ${database_disk} == "auto" ]]; then
         echo "Failed to detect database disk."
         exit 1
     fi
