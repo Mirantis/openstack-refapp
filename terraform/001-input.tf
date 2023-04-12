@@ -92,7 +92,7 @@ variable "app_network" {
 variable "app_docker_image" {
   type        = string
   description = "The link to docker image with App"
-  default     = "mirantis.azurecr.io/openstack/openstack-refapp:0.1.1"
+  default     = "mirantis.azurecr.io/openstack/openstack-refapp:0.1.2"
 }
 variable "app_port" {
   type    = number
