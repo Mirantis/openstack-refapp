@@ -87,6 +87,13 @@ function start_mariadb {
     fi
 }
 
+function wait_for_mariadb {
+    function wait_for {
+        test $(mysql -u root -p${DATABASE_ADMIN_PASSWORD} -NBe "show status like 'wsrep_ready';" | cut -f2) = 'ON'
+    }
+    retry 10 "Failed to wait for MariaDB to be ready" wait_for
+}
+
 function grant_remote_access {
     mysql -u root -p${DATABASE_ADMIN_PASSWORD} -e "GRANT ALL ON *.* to root@'%' IDENTIFIED BY \"${DATABASE_ADMIN_PASSWORD}\";"
 }
@@ -148,6 +155,7 @@ function install_database {
     install_mariadb
     configure_mariadb
     start_mariadb
+    wait_for_mariadb
     grant_remote_access
     init_refapp_database $APP_DATABASE_NAME $APP_DATABASE_USER $APP_DATABASE_PASSWORD
 }
