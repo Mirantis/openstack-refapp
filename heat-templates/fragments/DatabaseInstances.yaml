@@ -11,6 +11,10 @@ parameters:
   flavor:
     type: string
     description: Flavor to use for servers
+  server_tags:
+    type: json
+    description: Tags for servers
+    default: ["openstack.lcm.mirantis.com:prober"]
   database_network_id:
     type: string
   database_subnet_id:
@@ -132,6 +136,7 @@ resources:
         - port: { get_resource: private_server_01_port }
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_01}
+      tags: { get_param: server_tags }
 
   server-02:
     depends_on:
@@ -146,6 +151,7 @@ resources:
         - port: { get_resource: private_server_02_port }
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_02}
+      tags: { get_param: server_tags }
 
   server-03:
     depends_on:
@@ -160,6 +166,8 @@ resources:
         - port: { get_resource: private_server_03_port }
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_03}
+      tags: { get_param: server_tags }
+
 
   private_server_01_port:
     type: OS::Neutron::Port

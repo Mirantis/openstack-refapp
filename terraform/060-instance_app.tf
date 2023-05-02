@@ -48,6 +48,7 @@ resource "openstack_compute_instance_v2" "app" {
   key_pair          = openstack_compute_keypair_v2.user_key.name
   user_data         = data.template_cloudinit_config.config[each.value].rendered
   availability_zone = var.app_instance_az
+  tags              = local.server_tags
   network {
     port = openstack_networking_port_v2.app[each.value].id
   }

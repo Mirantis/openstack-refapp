@@ -1,3 +1,8 @@
+# Define local variables
+locals {
+  server_tags = ["openstack.lcm.mirantis.com:prober"]
+}
+
 # Define input variables
 
 # Cluster
