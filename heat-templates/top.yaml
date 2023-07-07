@@ -32,7 +32,7 @@ parameters:
     default: 'public'
   app_docker_image:
     type: string
-    default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.2'
+    default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.3'
     description: The link to docker image with App
   dns_nameservers:
     type: json
