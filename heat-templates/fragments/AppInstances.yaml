@@ -53,6 +53,14 @@ parameters:
     type: string
     description: You can specify "yes" to deploy the stack with one more app LB pool member.
     default: 'no'
+  app_lb_algorithm:
+    type: string
+    description: Algorithm for App loadbalancer
+    default: ROUND_ROBIN
+  app_lb_protocol:
+    type: string
+    description: Protocol for App loadbalancer
+    default: HTTP
 
 conditions:
   deploy_additional_app_listener:
@@ -315,21 +323,21 @@ resources:
     type: OS::Octavia::Listener
     properties:
       loadbalancer: {get_resource: lb}
-      protocol: HTTP
+      protocol: {get_param: app_lb_protocol}
       protocol_port: {get_param: app_port}
 
   pool:
     type: OS::Octavia::Pool
     properties:
       listener: {get_resource: listener}
-      lb_algorithm: ROUND_ROBIN
-      protocol: HTTP
+      lb_algorithm: {get_param: app_lb_algorithm}
+      protocol: {get_param: app_lb_protocol}
 
   lb_monitor:
     type: OS::Octavia::HealthMonitor
     properties:
       pool: { get_resource: pool }
-      type: HTTP
+      type: {get_param: app_lb_protocol}
       delay: 5
       max_retries: 5
       timeout: 5

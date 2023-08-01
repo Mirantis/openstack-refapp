@@ -42,6 +42,10 @@ parameters:
     type: number
     description: Boot timeout for instance
     default: 3600
+  database_lb_algorithm:
+    type: string
+    description: Algorithm for Database loadbalancer
+    default: SOURCE_IP
 
 resources:
 
@@ -286,7 +290,7 @@ resources:
     type: OS::Octavia::Pool
     properties:
       listener: {get_resource: listener}
-      lb_algorithm: SOURCE_IP
+      lb_algorithm: {get_param: database_lb_algorithm}
       protocol: TCP
       session_persistence:
         type: SOURCE_IP

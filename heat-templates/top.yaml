@@ -44,6 +44,18 @@ parameters:
     type: string
     description: You can specify "yes" to deploy the stack with one more app LB pool member.
     default: 'no'
+  app_lb_algorithm:
+    type: string
+    description: Algorithm for App loadbalancer
+    default: ROUND_ROBIN
+  app_lb_protocol:
+    type: string
+    description: Protocol for App loadbalancer
+    default: HTTP
+  database_lb_algorithm:
+    type: string
+    description: Algorithm for Database loadbalancer
+    default: SOURCE_IP
 resources:
   key_pair:
     type: OS::Nova::KeyPair
@@ -73,6 +85,7 @@ resources:
       database_admin_password: { get_param: database_admin_password }
       database_disk: { get_param: database_disk }
       public_network_id: { get_param: public_network_id }
+      database_lb_algorithm: { get_param: database_lb_algorithm }
 
   app:
     type: ./fragments/AppInstances.yaml
@@ -90,6 +103,8 @@ resources:
       app_docker_image: { get_param: app_docker_image }
       app_port: { get_param: app_port }
       one_more_app_listener: { get_param: one_more_app_listener }
+      app_lb_algorithm: { get_param: app_lb_algorithm }
+      app_lb_protocol: { get_param: app_lb_protocol }
 
 outputs:
   database_private_ips:
