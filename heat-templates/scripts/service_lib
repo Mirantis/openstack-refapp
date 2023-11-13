@@ -33,8 +33,8 @@ function install_required_packages {
 
 function install_mariadb {
     function install_retry {
-        apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8 && \
-        add-apt-repository 'deb [arch=amd64] http://mirrors.digitalocean.com/mariadb/repo/10.6/ubuntu bionic main' && \
+        curl -L https://r.mariadb.com/downloads/mariadb_repo_setup -o /tmp/mariadb_repo_setup.sh && \
+        bash /tmp/mariadb_repo_setup.sh --skip-maxscale --skip-tools --mariadb-server-version mariadb-10.6 && \
         apt update && \
         apt install -y mariadb-server mariadb-client rsync
     }
