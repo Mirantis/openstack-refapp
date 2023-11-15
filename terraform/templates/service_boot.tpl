@@ -17,6 +17,7 @@ NODE_02_IP=${node_02_ip}
 NODE_03_IP=${node_03_ip}
 DATABASE_ADMIN_PASSWORD=${database_admin_password}
 DATABASE_DISK=${database_disk}
+DATABASE_DOCKER_IMAGE=${database_docker_image}
 %{ endif ~}
 
 source /tmp/.service_lib

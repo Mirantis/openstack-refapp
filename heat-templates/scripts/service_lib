@@ -25,37 +25,18 @@ function retry {
 function install_required_packages {
     function install_retry {
         apt update && \
-        export DEBIAN_FRONTEND=noninteractive; apt install -y apt-transport-https ca-certificates curl software-properties-common jq unzip atop iptables-persistent
+        export DEBIAN_FRONTEND=noninteractive; apt install -y apt-transport-https ca-certificates curl software-properties-common jq unzip atop iptables-persistent mysql-client
     }
     retry 10 "Failed to install required packages" install_retry
 }
 
 
-function install_mariadb {
-    function install_retry {
-        curl -L https://r.mariadb.com/downloads/mariadb_repo_setup -o /tmp/mariadb_repo_setup.sh && \
-        bash /tmp/mariadb_repo_setup.sh --skip-maxscale --skip-tools --mariadb-server-version mariadb-10.6 && \
-        apt update && \
-        apt install -y mariadb-server mariadb-client rsync
-    }
-    retry 10 "Failed to install MariaDB" install_retry
-    systemctl enable mariadb.service
-    mysql_secure_installation <<EOF
-y
-${DATABASE_ADMIN_PASSWORD}
-${DATABASE_ADMIN_PASSWORD}
-y
-y
-y
-y
-EOF
-
-}
-
 function configure_mariadb {
-    systemctl stop mariadb.service
+    mkdir -p /var/lib/mysql/scripts
+    mkdir -p /var/lib/mysql/etc/mysql/mariadb.conf.d
+
     local node_ip_var="NODE_${NODE_NUMBER}_IP"
-    cat <<EOF > /etc/mysql/mariadb.conf.d/60-galera.cnf
+    cat <<EOF > /var/lib/mysql/etc/mysql/mariadb.conf.d/60-galera.cnf
 [mysqld]
 binlog_format=ROW
 default-storage-engine=innodb
@@ -78,25 +59,33 @@ wsrep_sst_method=rsync
 wsrep_node_address="${!node_ip_var}"
 wsrep_node_name="$(hostname)"
 EOF
-}
 
-function start_mariadb {
-    if [[ "$NODE_NUMBER" -eq "01" ]]; then
-        galera_new_cluster
-    else
-        systemctl start mariadb.service
-    fi
 }
 
 function wait_for_mariadb {
     function wait_for {
-        test $(mysql -u root -p${DATABASE_ADMIN_PASSWORD} -NBe "show status like 'wsrep_ready';" | cut -f2) = 'ON'
+        test $(mysql -h 127.0.0.1 -u root -p${DATABASE_ADMIN_PASSWORD} -NBe "show status like 'wsrep_ready';" | cut -f2) = 'ON'
     }
     retry 10 "Failed to wait for MariaDB to be ready" wait_for
 }
 
+function start_mariadb {
+    local wsrep_cluster_address=
+    if [[ "$NODE_NUMBER" -eq "01" ]]; then
+        wsrep_cluster_address=$(grep wsrep_cluster_address /var/lib/mysql/etc/mysql/mariadb.conf.d/60-galera.cnf)
+        sed -i 's|wsrep_cluster_address=.*|wsrep_cluster_address="gcomm://"|g' /var/lib/mysql/etc/mysql/mariadb.conf.d/60-galera.cnf
+    fi
+    docker run --restart=always --name database -v /var/lib/mysql/etc/mysql/mariadb.conf.d:/etc/mysql/mariadb.conf.d/ -v /var/lib/mysql:/var/lib/mysql -dit --network host --hostname $(hostname) -e MYSQL_ROOT_PASSWORD=${DATABASE_ADMIN_PASSWORD}  $DATABASE_DOCKER_IMAGE
+
+        sleep 60
+        wait_for_mariadb
+    if [[ "$NODE_NUMBER" -eq "01" ]]; then
+        sed -i "s|wsrep_cluster_address=.*|$wsrep_cluster_address|g" /var/lib/mysql/etc/mysql/mariadb.conf.d/60-galera.cnf
+    fi
+}
+
 function grant_remote_access {
-    mysql -u root -p${DATABASE_ADMIN_PASSWORD} -e "GRANT ALL ON *.* to root@'%' IDENTIFIED BY \"${DATABASE_ADMIN_PASSWORD}\";"
+    mysql -h 127.0.0.1 -u root -p${DATABASE_ADMIN_PASSWORD} -e "GRANT ALL ON *.* to root@'%' IDENTIFIED BY \"${DATABASE_ADMIN_PASSWORD}\";"
 }
 
 function init_refapp_database {
@@ -104,9 +93,9 @@ function init_refapp_database {
     local db_user=$2
     local db_password=$3
 
-    mysql -u root -p${DATABASE_ADMIN_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS $db CHARACTER SET utf8;"
-    mysql -u root -p${DATABASE_ADMIN_PASSWORD} -e "CREATE USER IF NOT EXISTS '${db_user}'@'%' identified by '${db_password}';"
-    mysql -u root -p${DATABASE_ADMIN_PASSWORD} -e "GRANT ALL PRIVILEGES ON ${db}.* TO '${db_user}'@'%';"
+    mysql -h 127.0.0.1 -u root -p${DATABASE_ADMIN_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS $db CHARACTER SET utf8;"
+    mysql -h 127.0.0.1 -u root -p${DATABASE_ADMIN_PASSWORD} -e "CREATE USER IF NOT EXISTS '${db_user}'@'%' identified by '${db_password}';"
+    mysql -h 127.0.0.1 -u root -p${DATABASE_ADMIN_PASSWORD} -e "GRANT ALL PRIVILEGES ON ${db}.* TO '${db_user}'@'%';"
 }
 
 function mount_drives {
@@ -153,10 +142,9 @@ function mount_drives {
 
 function install_database {
     install_required_packages
-    install_mariadb
+    install_docker
     configure_mariadb
     start_mariadb
-    wait_for_mariadb
     grant_remote_access
     init_refapp_database $APP_DATABASE_NAME $APP_DATABASE_USER $APP_DATABASE_PASSWORD
 }

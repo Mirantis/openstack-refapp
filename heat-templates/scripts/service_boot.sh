@@ -17,6 +17,7 @@ DATABASE_DISK=$database_disk
 SERVICE_TYPE=$service_type
 APP_DOCKER_IMAGE=$app_docker_image
 APP_PORT=$app_port
+DATABASE_DOCKER_IMAGE=$database_docker_image
 #
 # End of block
 #

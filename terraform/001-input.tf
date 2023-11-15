@@ -112,3 +112,8 @@ variable "app_database" {
     password = "refapp"
   }
 }
+variable "database_docker_image" {
+  type        = string
+  description = "The link to docker image with Mairadb"
+  default     = "mirantis.azurecr.io/openstack/extra/mariadb:10.6-focal"
+}

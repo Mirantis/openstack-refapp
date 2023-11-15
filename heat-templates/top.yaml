@@ -34,6 +34,9 @@ parameters:
     type: string
     default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.3'
     description: The link to docker image with App
+  database_docker_image:
+    type: string
+    default: mirantis.azurecr.io/openstack/extra/mariadb:10.6-focal
   dns_nameservers:
     type: json
     default: []
@@ -84,6 +87,7 @@ resources:
       database_subnet_id: { get_attr: [network, database_subnet_id ] }
       database_admin_password: { get_param: database_admin_password }
       database_disk: { get_param: database_disk }
+      database_docker_image: { get_param: database_docker_image }
       public_network_id: { get_param: public_network_id }
       database_lb_algorithm: { get_param: database_lb_algorithm }
 

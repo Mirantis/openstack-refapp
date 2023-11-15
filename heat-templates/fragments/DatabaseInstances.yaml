@@ -15,6 +15,8 @@ parameters:
     type: json
     description: Tags for servers
     default: ["openstack.lcm.mirantis.com:prober"]
+  database_docker_image:
+    type: string
   database_network_id:
     type: string
   database_subnet_id:
@@ -72,6 +74,7 @@ resources:
             $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
             $database_admin_password: { get_param: database_admin_password }
             $database_disk: { get_param: database_disk }
+            $database_docker_image: { get_param: database_docker_image }
             $service_type: "database"
 
   install_config_agent_01:
@@ -96,6 +99,7 @@ resources:
             $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
             $database_admin_password: { get_param: database_admin_password }
             $database_disk: { get_param: database_disk }
+            $database_docker_image: { get_param: database_docker_image }
             $service_type: "database"
 
   install_config_agent_02:
@@ -120,6 +124,7 @@ resources:
             $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
             $database_admin_password: { get_param: database_admin_password }
             $database_disk: { get_param: database_disk }
+            $database_docker_image: { get_param: database_docker_image }
             $service_type: "database"
 
   install_config_agent_03:
