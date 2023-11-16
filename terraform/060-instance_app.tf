@@ -12,7 +12,6 @@ data "template_file" "script" {
     app_database_name     = var.app_database["name"]
     app_database_user     = var.app_database["user"]
     app_database_password = var.app_database["password"]
-    database_docker_image = var.database_docker_image
   }
 }
 
