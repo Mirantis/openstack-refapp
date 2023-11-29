@@ -48,6 +48,8 @@ parameters:
     type: string
     description: Algorithm for Database loadbalancer
     default: SOURCE_IP
+  app_database_password:
+    type: string
 
 resources:
 
@@ -75,6 +77,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $database_disk: { get_param: database_disk }
             $database_docker_image: { get_param: database_docker_image }
+            $app_database_password: { get_param: app_database_password }
             $service_type: "database"
 
   install_config_agent_01:
@@ -100,6 +103,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $database_disk: { get_param: database_disk }
             $database_docker_image: { get_param: database_docker_image }
+            $app_database_password: { get_param: app_database_password }
             $service_type: "database"
 
   install_config_agent_02:
@@ -125,6 +129,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $database_disk: { get_param: database_disk }
             $database_docker_image: { get_param: database_docker_image }
+            $app_database_password: { get_param: app_database_password }
             $service_type: "database"
 
   install_config_agent_03:

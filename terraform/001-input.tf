@@ -57,10 +57,9 @@ variable "db_network" {
     cidr        = "10.10.10.0/24"
   }
 }
-variable "db_admin_password" {
-  type        = string
-  description = "The root password for database"
-  default     = "r00tme"
+variable "db_passwords" {
+  type        = map(string)
+  description = "The passwords for database (admin,app)"
 }
 variable "db_disk" {
   type        = string
@@ -107,9 +106,8 @@ variable "app_database" {
   type        = map(string)
   description = "The credentials of application database"
   default = {
-    name     = "refapp"
-    user     = "refapp"
-    password = "refapp"
+    name = "refapp"
+    user = "refapp"
   }
 }
 variable "database_docker_image" {

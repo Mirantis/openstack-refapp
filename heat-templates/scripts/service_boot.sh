@@ -15,17 +15,16 @@ DATABASE_ADMIN_PASSWORD=$database_admin_password
 DATABASE_VIP=$database_vip
 DATABASE_DISK=$database_disk
 SERVICE_TYPE=$service_type
+APP_DATABASE_PASSWORD=$app_database_password
 APP_DOCKER_IMAGE=$app_docker_image
 APP_PORT=$app_port
 DATABASE_DOCKER_IMAGE=$database_docker_image
 #
 # End of block
 #
-DATABASE_ADMIN_PASSWORD=${DATABASE_ADMIN_PASSWORD:-"r00tme"}
 DATABASE_DISK=${DATABASE_DISK:-"/dev/vdb"}
 APP_DATABASE_NAME=${APP_DATABASE_NAME:-"refapp"}
 APP_DATABASE_USER=${APP_DATABASE_USER:-"refapp"}
-APP_DATABASE_PASSWORD=${APP_DATABASE_PASSWORD:-"refapp"}
 
 function wait_condition_send {
     local status=${1:-SUCCESS}

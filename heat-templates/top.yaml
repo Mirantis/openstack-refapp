@@ -12,7 +12,6 @@ parameters:
   database_admin_password:
     type: string
     description: The root password for database
-    default: 'r00tme'
   database_disk:
     type: string
     description: Dedicated disk for database
@@ -30,6 +29,9 @@ parameters:
   public_network_id:
     type: string
     default: 'public'
+  app_database_password:
+    type: string
+    description: The password for application database
   app_docker_image:
     type: string
     default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.4'
@@ -90,6 +92,7 @@ resources:
       database_docker_image: { get_param: database_docker_image }
       public_network_id: { get_param: public_network_id }
       database_lb_algorithm: { get_param: database_lb_algorithm }
+      app_database_password: { get_param: app_database_password }
 
   app:
     type: ./fragments/AppInstances.yaml
@@ -109,6 +112,7 @@ resources:
       one_more_app_listener: { get_param: one_more_app_listener }
       app_lb_algorithm: { get_param: app_lb_algorithm }
       app_lb_protocol: { get_param: app_lb_protocol }
+      app_database_password: { get_param: app_database_password }
 
 outputs:
   database_private_ips:

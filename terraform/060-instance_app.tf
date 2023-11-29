@@ -11,7 +11,7 @@ data "template_file" "script" {
     app_port              = var.app_port
     app_database_name     = var.app_database["name"]
     app_database_user     = var.app_database["user"]
-    app_database_password = var.app_database["password"]
+    app_database_password = var.db_passwords["app"]
   }
 }
 

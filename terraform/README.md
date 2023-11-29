@@ -21,9 +21,11 @@ before it can be used. They could be loaded from the environment variable names
     $ terraform init
 
 ## Apply terraform state
-Generate a speculative execution plan, showing what actions would take to apply
-the current configuration, then apply it:
+Define passwords for database accounts and generate a speculative execution
+plan, showing what actions would take to apply the current configuration, then
+apply it:
 
+    $ echo '{"db_passwords": {"admin": "<admin_password>", "app": "<app_password>"}}' > terraform.tfvars.json
     $ terraform plan
     $ terraform apply -auto-approve
 

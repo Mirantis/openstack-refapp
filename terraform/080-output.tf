@@ -39,3 +39,7 @@ output "app_url" {
   description = "API url for the reference application"
   value       = "http://${openstack_networking_floatingip_v2.appx.address}:${var.app_port}/"
 }
+output "db_passwords" {
+  description = "DB admin/app passwords"
+  value       = "${var.db_passwords}"
+}

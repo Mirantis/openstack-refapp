@@ -38,6 +38,8 @@ parameters:
   metadata_database_vip:
     type: string
     default: ''
+  app_database_password:
+    type: string
   app_docker_image:
     type: string
     default: 'httpd:2.4-alpine'
@@ -94,6 +96,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $service_type: "app"
             $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
             $app_docker_image: { get_param: app_docker_image }
             $app_port: { get_param: app_port }
 
@@ -120,6 +123,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $service_type: "app"
             $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
             $app_docker_image: { get_param: app_docker_image }
             $app_port: { get_param: app_port }
 
@@ -146,6 +150,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $service_type: "app"
             $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
             $app_docker_image: { get_param: app_docker_image }
             $app_port: { get_param: app_port }
 
@@ -173,6 +178,7 @@ resources:
             $database_admin_password: { get_param: database_admin_password }
             $service_type: "app"
             $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
             $app_docker_image: { get_param: app_docker_image }
             $app_port: { get_param: app_port }
 

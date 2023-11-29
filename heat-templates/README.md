@@ -24,11 +24,13 @@ Generate keypairs for application/database instances:
     $ ssh-keygen -N '' -C '' -f .openstack
 
 ## Create the stack
-Lets create the stack, using a refapp template with public key generated above:
+Lets create the stack, using a refapp template with passwords for database
+accounts and public key generated above:
 
     $ PUBLIC_KEY=$(<.openstack.pub)
-    $ openstack stack create -t top.yaml --parameter "cluster_public_key=${PUBLIC_KEY}" $STACK_NAME
-
+    $ openstack stack create -t top.yaml --parameter "cluster_public_key=${PUBLIC_KEY}" \
+      --parameter "database_admin_password=<admin_password>" \
+      --parameter "app_database_password=<app_password>" $STACK_NAME
 
 ## Verify stack creation
 

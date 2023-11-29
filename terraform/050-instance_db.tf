@@ -10,11 +10,11 @@ data "template_file" "script_db" {
     node_01_ip              = openstack_networking_port_v2.db["db-01"].all_fixed_ips.0
     node_02_ip              = openstack_networking_port_v2.db["db-02"].all_fixed_ips.0
     node_03_ip              = openstack_networking_port_v2.db["db-03"].all_fixed_ips.0
-    database_admin_password = var.db_admin_password
+    database_admin_password = var.db_passwords["admin"]
     database_disk           = var.db_disk
     app_database_name       = var.app_database["name"]
     app_database_user       = var.app_database["user"]
-    app_database_password   = var.app_database["password"]
+    app_database_password   = var.db_passwords["app"]
     database_docker_image   = var.database_docker_image
   }
 }
