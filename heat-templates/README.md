@@ -28,7 +28,9 @@ Lets create the stack, using a refapp template with passwords for database
 accounts and public key generated above:
 
     $ PUBLIC_KEY=$(<.openstack.pub)
+    $ PRIVATE_KEY=$(<.openstack)
     $ openstack stack create -t top.yaml --parameter "cluster_public_key=${PUBLIC_KEY}" \
+      --parameter "cluster_private_key=${PRIVATE_KEY}" \
       --parameter "database_admin_password=<admin_password>" \
       --parameter "app_database_password=<app_password>" $STACK_NAME
 
