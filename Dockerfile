@@ -18,3 +18,4 @@ RUN sh -c "echo -e \"LABELS:\n  IMAGE_TAG: $(python3 -c 'from openstack_refapp i
 RUN rm -rvf /opt/wheels /var/cache/apk/*
 
 CMD ["/usr/local/bin/gunicorn", "-c", "/opt/app/gunicorn.conf.py", "openstack_refapp.app:create_app()"]
+
