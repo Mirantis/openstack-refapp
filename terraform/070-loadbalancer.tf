@@ -9,7 +9,7 @@ resource "openstack_lb_loadbalancer_v2" "app" {
 # Create listener
 resource "openstack_lb_listener_v2" "app" {
   name            = "${var.identifier}-listener-app"
-  protocol        = "HTTP"
+  protocol        = var.app_lb_protocol
   protocol_port   = var.app_port
   loadbalancer_id = openstack_lb_loadbalancer_v2.app.id
 }
@@ -17,8 +17,8 @@ resource "openstack_lb_listener_v2" "app" {
 # Set method for load balance charge between instance
 resource "openstack_lb_pool_v2" "app" {
   name        = "${var.identifier}-pool-app"
-  protocol    = "HTTP"
-  lb_method   = "ROUND_ROBIN"
+  protocol    = var.app_lb_protocol
+  lb_method   = var.app_lb_algorithm
   listener_id = openstack_lb_listener_v2.app.id
 }
 
@@ -36,7 +36,7 @@ resource "openstack_lb_member_v2" "app" {
 resource "openstack_lb_monitor_v2" "app" {
   name        = "${var.identifier}-monitor-app"
   pool_id     = openstack_lb_pool_v2.app.id
-  type        = "HTTP"
+  type        = var.app_lb_protocol
   delay       = 5
   timeout     = 5
   max_retries = 5
@@ -70,7 +70,7 @@ resource "openstack_lb_listener_v2" "db" {
 resource "openstack_lb_pool_v2" "db" {
   name        = "${var.identifier}-pool-db"
   protocol    = "TCP"
-  lb_method   = "SOURCE_IP"
+  lb_method   = var.database_lb_algorithm
   listener_id = openstack_lb_listener_v2.db.id
 
   persistence {

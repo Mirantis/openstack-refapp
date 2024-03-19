@@ -1,3 +1,8 @@
+provider "openstack" {
+  use_octavia = "true"
+  cloud = "admin"
+}
+
 # Define OpenStack provider
 terraform {
   required_providers {
