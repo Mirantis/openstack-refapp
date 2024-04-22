@@ -139,6 +139,12 @@ resources:
       - config: {get_resource: boot_config}
       - config: {get_resource: software_config_03}
 
+  db_group:
+   type: OS::Nova::ServerGroup
+   properties:
+     name:  "db-group"
+     policies: [ 'soft-anti-affinity' ]
+
   server-01:
     type: OS::Nova::Server
     properties:
@@ -151,6 +157,8 @@ resources:
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_01}
       tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: db_group }
 
   server-02:
     depends_on:
@@ -166,6 +174,8 @@ resources:
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_02}
       tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: db_group }
 
   server-03:
     depends_on:
@@ -181,6 +191,8 @@ resources:
       user_data_format: SOFTWARE_CONFIG
       user_data: { get_resource:  install_config_agent_03}
       tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: db_group }
 
 
   private_server_01_port:
