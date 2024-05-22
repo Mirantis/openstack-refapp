@@ -200,6 +200,7 @@ resources:
     properties:
       network_id: { get_param: database_network_id }
       port_security_enabled: false
+      dns_name: db01
       fixed_ips:
         - subnet: { get_param: database_subnet_id  }
 
@@ -208,6 +209,7 @@ resources:
     properties:
       network_id: { get_param: database_network_id }
       port_security_enabled: false
+      dns_name: db02
       fixed_ips:
         - subnet: { get_param: database_subnet_id  }
 
@@ -216,6 +218,7 @@ resources:
     properties:
       network_id: { get_param: database_network_id }
       port_security_enabled: false
+      dns_name: db03
       fixed_ips:
         - subnet: { get_param: database_subnet_id  }
 
@@ -349,7 +352,6 @@ resources:
       address: { get_attr: [ server-03, first_address ]}
       protocol_port: 3306
       subnet: { get_param: database_subnet_id }
-
 
 outputs:
   database_private_ips:

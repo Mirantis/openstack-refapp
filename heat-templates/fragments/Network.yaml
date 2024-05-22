@@ -11,11 +11,35 @@ parameters:
     default: 'public'
   dns_nameservers:
     type: json
+  dns_zone:
+    type: string
 
 resources:
 
+  dns_random_string:
+    type: OS::Heat::RandomString
+    properties:
+      character_classes: [{"class": lowercase, "min": 10}]
+      length: 10
+
+  database_zone_name:
+    type: OS::Heat::Value
+    properties:
+      value:
+        list_join: [ '.', [ { get_resource: dns_random_string }, 'db', { get_param: dns_zone } ]]
+      type: string
+
+  database_zone:
+    type: OS::Designate::Zone
+    properties:
+      name: { get_attr: [database_zone_name, value] }
+      description: String
+      email: refapp-admin@test.test
+
   database_network:
     type: OS::Neutron::Net
+    properties:
+      dns_domain: { get_attr: [database_zone_name, value] }
   database_subnet:
     type: OS::Neutron::Subnet
     properties:
@@ -24,8 +48,24 @@ resources:
       cidr: { get_param: database_network_cidr }
       dns_nameservers: { get_param: dns_nameservers }
 
+  app_zone_name:
+    type: OS::Heat::Value
+    properties:
+      value:
+        list_join: [ '.', [ { get_resource: dns_random_string }, 'app', { get_param: dns_zone } ]]
+      type: string
+
+  app_zone:
+    type: OS::Designate::Zone
+    properties:
+      name: { get_attr: [app_zone_name, value] }
+      description: String
+      email: refapp-admin@test.test
+
   app_network:
     type: OS::Neutron::Net
+    properties:
+      dns_domain: { get_attr: [app_zone_name, value] }
   app_subnet:
     type: OS::Neutron::Subnet
     properties:
@@ -59,9 +99,21 @@ outputs:
   database_subnet_id:
     description: The uuid of database subnet
     value: { get_resource: database_subnet }
+  database_dns_zone_id:
+    description: The uuid of refapp DB DNS zone
+    value: { get_resource: database_zone }
+  database_dns_zone_name:
+    description: The name for DNS zone with database refapp
+    value: { get_attr: [database_zone_name, value] }
   app_network_id:
     description: The uuid of app network
     value: { get_resource: app_network }
   app_subnet_id:
     description: The uuid of app subnet
     value: { get_resource: app_subnet }
+  app_dns_zone_id:
+    description: The uuid of refapp APP DNS zone
+    value: { get_resource: app_zone }
+  app_dns_zone_name:
+    description: The name for DNS zone with APPs refapp
+    value: { get_attr: [app_zone_name, value] }

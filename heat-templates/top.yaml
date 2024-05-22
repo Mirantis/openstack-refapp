@@ -64,6 +64,10 @@ parameters:
     type: string
     description: Algorithm for Database loadbalancer
     default: SOURCE_IP
+  dns_zone:
+    type: string
+    default: 'refapp.test.'
+
 resources:
   key_pair:
     type: OS::Nova::KeyPair
@@ -79,6 +83,7 @@ resources:
       app_network_cidr: { get_param: app_network_cidr }
       public_network_id: { get_param: public_network_id }
       dns_nameservers: { get_param: dns_nameservers }
+      dns_zone: { get_param: dns_zone }
 
   database:
     type: ./fragments/DatabaseInstances.yaml
@@ -116,6 +121,8 @@ resources:
       app_lb_algorithm: { get_param: app_lb_algorithm }
       app_lb_protocol: { get_param: app_lb_protocol }
       app_database_password: { get_param: app_database_password }
+      app_dns_zone_id: { get_attr: [network, app_dns_zone_id ] }
+      app_dns_zone_name: { get_attr: [network, app_dns_zone_name ] }
 
 outputs:
   database_private_ips:
@@ -133,6 +140,12 @@ outputs:
   database_floating_ips:
     description: Database instances floating IPs
     value: { get_attr: [database, database_floating_ips] }
+  database_dns_zone_name:
+    description: The name for DNS zone with database refapp
+    value: { get_attr: [database, app_dns_zone_name] }
+  app_dns_zone_name:
+    description: The name for DNS zone with APPs refapp
+    value: { get_attr: [app, database_dns_zone_name] }
   app_url:
     description: API url for the reference application
     value:
