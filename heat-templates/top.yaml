@@ -142,10 +142,10 @@ outputs:
     value: { get_attr: [database, database_floating_ips] }
   database_dns_zone_name:
     description: The name for DNS zone with database refapp
-    value: { get_attr: [database, app_dns_zone_name] }
+    value: { get_attr: [network, database_dns_zone_name] }
   app_dns_zone_name:
     description: The name for DNS zone with APPs refapp
-    value: { get_attr: [app, database_dns_zone_name] }
+    value: { get_attr: [network, app_dns_zone_name] }
   app_url:
     description: API url for the reference application
     value:
