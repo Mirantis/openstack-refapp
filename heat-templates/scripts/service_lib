@@ -21,13 +21,17 @@ function retry {
     done
     return 0
 }
+function install_packages {
+    local packages="$1"
+    function _install_packages {
+        apt update && \
+        export DEBIAN_FRONTEND=noninteractive; apt install -y apt-transport-https ca-certificates $packages
+    }
+    retry 10 "Failed to install required packages" _install_packages
+}
 
 function install_required_packages {
-    function install_retry {
-        apt update && \
-        export DEBIAN_FRONTEND=noninteractive; apt install -y apt-transport-https ca-certificates curl software-properties-common jq unzip atop iptables-persistent mysql-client
-    }
-    retry 10 "Failed to install required packages" install_retry
+        install_packages "apt-transport-https ca-certificates curl software-properties-common jq unzip atop iptables-persistent mysql-client"
 }
 
 
@@ -140,9 +144,18 @@ function mount_drives {
     fi
 }
 
+function cache_images {
+    local image="$1"
+    function _get_image {
+        docker pull ${image}
+    }
+    retry 10 "Failed to pull image" _get_image
+}
+
 function install_database {
     install_required_packages
     install_docker
+    cache_images $DATABASE_DOCKER_IMAGE
     configure_mariadb
     start_mariadb
     grant_remote_access
@@ -158,12 +171,12 @@ function install_docker {
   ]
 }
 EOF
-    apt update
-    apt install -y docker.io
+    install_packages docker.io
 }
 
 function install_app {
     install_docker
+    cache_images $APP_DOCKER_IMAGE
     docker run --restart=always -dit -p ${APP_PORT}:8000 --hostname $(hostname) -e OS_REFAPP_DB_URL="mysql+pymysql://${APP_DATABASE_USER}:${APP_DATABASE_PASSWORD}@${DATABASE_VIP}:3306/refapp" $APP_DOCKER_IMAGE
 }
 
