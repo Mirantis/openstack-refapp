@@ -109,6 +109,12 @@ Show record by its id::
     $ curl http://<host:port>/records/2
     {"record": {"id": 2, "created_at": "2020-04-06T12:12:52.000", "host": "f1f66c9fb4b3", "data": null}}
 
+DELETE /records/{id}
+-----------------
+
+Delete record by its id::
+
+    $ curl -X DELETE http://<host:port>/records/2
 
 Used external components
 ========================

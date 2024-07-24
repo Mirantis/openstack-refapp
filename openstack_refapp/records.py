@@ -51,3 +51,15 @@ class RecordResource:
         else:
             LOG.info(f"No Record with id {id} found")
             resp.status = falcon.HTTP_404
+
+    def on_delete(self, req, resp, id):
+        LOG.debug("Deleting Record ...")
+        result = (
+            req.context.session.query(Record).filter(Record.id == id).delete()
+        )
+        if result:
+            req.context.session.commit()
+            LOG.debug("Record %s deleted", id)
+        else:
+            LOG.info(f"No Record with id {id} found")
+            resp.status = falcon.HTTP_404
