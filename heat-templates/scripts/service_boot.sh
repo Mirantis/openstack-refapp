@@ -35,7 +35,7 @@ function wait_condition_send {
     WAIT_CONDITION_NOTIFY_EXIT_CODE=2
     i=0
     while (( ${WAIT_CONDITION_NOTIFY_EXIT_CODE} != 0 && ${i} < 5 )); do
-        $wait_condition_notify -k --data-binary "$data_binary" && WAIT_CONDITION_NOTIFY_EXIT_CODE=0 || WAIT_CONDITION_NOTIFY_EXIT_CODE=2
+        $wait_condition_notify --retry 10 --retry-delay 5 -k --data-binary "$data_binary" && WAIT_CONDITION_NOTIFY_EXIT_CODE=0 || WAIT_CONDITION_NOTIFY_EXIT_CODE=2
         i=$((i + 1))
         sleep 1
     done
