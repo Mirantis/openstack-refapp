@@ -1,0 +1,83 @@
+heat_template_version: queens
+
+parameters:
+  database_network_id:
+    type: string
+  database_subnet_id:
+    type: string
+  database_vdns_uuid:
+    type: string
+
+resources:
+  private_server_01_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: database_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: database_subnet_id }
+
+  vdnsRecord_db01:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: db01
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: db01,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ private_server_01_port, fixed_ips, 0, ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: database_vdns_uuid }
+
+  private_server_02_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: database_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: database_subnet_id }
+
+  vdnsRecord_db02:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: db02
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: db02,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ private_server_02_port, fixed_ips, 0, ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: database_vdns_uuid }
+
+  private_server_03_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: database_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: database_subnet_id }
+
+  vdnsRecord_db03:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: db03
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: db03,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ private_server_03_port, fixed_ips, 0, ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: database_vdns_uuid }
+
+outputs:
+  database_private_ips:
+    description: Private IP addresses of database nodes
+    value: [ { get_attr: [ private_server_01_port, fixed_ips, 0, ip_address ] }, { get_attr: [ private_server_02_port, fixed_ips, 0, ip_address ] }, { get_attr: [ private_server_03_port, fixed_ips, 0, ip_address ] } ]
+  database_ports_data:
+    value: [ { 'id': { get_resource: private_server_01_port }, 'port': { get_attr: [ private_server_01_port ] } }, { 'id': { get_resource: private_server_02_port }, 'port': { get_attr: [ private_server_02_port ] } }, { 'id': { get_resource: private_server_03_port }, 'port': { get_attr: [ private_server_03_port ] } } ]

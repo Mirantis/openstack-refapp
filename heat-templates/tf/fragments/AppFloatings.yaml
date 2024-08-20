@@ -1,0 +1,130 @@
+heat_template_version: queens
+
+parameters:
+  public_network_id:
+    type: string
+  app_dns_zone_id:
+    type: string
+  app_dns_zone_name:
+    type: string
+  app_vip:
+    type: string
+  app_ports_data:
+    type: json
+  one_more_app_listener:
+    type: string
+    description: You can specify "yes" to deploy the stack with one more app LB pool member.
+    default: 'no'
+
+conditions:
+  deploy_additional_app_listener:
+    equals:
+    - get_param: one_more_app_listener
+    - 'yes'
+
+resources:
+  server_01_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_param: [ app_ports_data, 0, id ] }
+
+  appRecord_app01:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: app01
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: app01,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ server_01_floating_ip, floating_ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: app_dns_zone_id }
+
+  server_02_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_param: [ app_ports_data, 1, id ] }
+
+  appRecord_app02:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: app02
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: app02,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ server_02_floating_ip, floating_ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: app_dns_zone_id }
+
+  server_03_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_param: [ app_ports_data, 2, id ] }
+
+  appRecord_app03:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: app03
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: app03,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ server_03_floating_ip, floating_ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: app_dns_zone_id }
+
+  server_04_floating_ip:
+    type: OS::Neutron::FloatingIP
+    condition: deploy_additional_app_listener
+    properties:
+      floating_network_id: { get_param: public_network_id }
+      port_id: { get_param: [ app_ports_data, 3, id ] }
+
+  appRecord_app04:
+    type: OS::ContrailV2::VirtualDnsRecord
+    condition: deploy_additional_app_listener
+    properties:
+      name: app04
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: app04,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_attr: [ server_04_floating_ip, floating_ip_address ] },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: app_dns_zone_id }
+
+  # Create vDNS record with app FIP LB
+  app_vip_redcordset_tf:
+    type: OS::ContrailV2::VirtualDnsRecord
+    properties:
+      name: app-vip
+      virtual_DNS_record_data:
+        {
+          virtual_DNS_record_data_record_name: app-vip,
+          virtual_DNS_record_data_record_type: 'A',
+          virtual_DNS_record_data_record_class: 'IN',
+          virtual_DNS_record_data_record_data: { get_param: app_vip },
+          virtual_DNS_record_data_record_ttl_seconds: 86400,
+        }
+      virtual_DNS: { get_param: app_dns_zone_id }
+
+outputs:
+  app_floating_ips:
+    description: App instances floating IPs
+    value:
+      if:
+        - deploy_additional_app_listener
+        - [ { get_attr: [ server_01_floating_ip, floating_ip_address ] }, { get_attr: [ server_02_floating_ip, floating_ip_address ] }, { get_attr: [ server_03_floating_ip, floating_ip_address ] }, { get_attr: [ server_04_floating_ip, floating_ip_address ] } ]
+        - [ { get_attr: [ server_01_floating_ip, floating_ip_address ] }, { get_attr: [ server_02_floating_ip, floating_ip_address ] }, { get_attr: [ server_03_floating_ip, floating_ip_address ] } ]
