@@ -37,7 +37,7 @@ parameters:
     description: The password for application database
   app_docker_image:
     type: string
-    default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.9'
+    default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.10'
     description: The link to docker image with App
   database_docker_image:
     type: string
