@@ -1,0 +1,147 @@
+heat_template_version: queens
+
+parameters:
+  app_network_cidr:
+    type: string
+  database_network_cidr:
+    type: string
+  dns_nameservers:
+    type: json
+  app_dns_zone_name:
+    type: string
+  database_dns_zone_name:
+    type: string
+  domain:
+    type: string
+    default: 'default-domain'
+
+resources:
+  db_dns_suffix:
+    type: OS::Heat::Value
+    properties:
+      value:
+        list_join: ['-', [{str_split: ['.', { get_param: database_dns_zone_name }, 0]}, 'db', 'vDNS']]
+      type: string
+
+  database_vdns:
+    type: OS::ContrailV2::VirtualDns
+    properties:
+      name: { get_attr: [ db_dns_suffix, value ] }
+      virtual_DNS_data:
+        {
+          virtual_DNS_data_domain_name: { get_param: database_dns_zone_name },
+          virtual_DNS_data_default_ttl_seconds: 86400,
+          virtual_DNS_data_dynamic_records_from_client: true,
+          virtual_DNS_data_reverse_resolution: true,
+        }
+      domain: { get_param: domain }
+
+  database_ipam:
+    type: OS::ContrailV2::NetworkIpam
+    properties:
+      name: { list_join: ['-', [{ get_param: database_dns_zone_name }, 'ipam' ]] }
+      network_ipam_mgmt:
+        {
+          network_ipam_mgmt_ipam_dns_method: 'virtual-dns-server',
+          network_ipam_mgmt_ipam_dns_server:
+            {
+              network_ipam_mgmt_ipam_dns_server_virtual_dns_server_name: { list_join: [':', { get_attr: [database_vdns, fq_name] }] },
+            },
+        }
+      virtual_DNS_refs: [ { get_resource: database_vdns } ]
+
+  database_network:
+    type: OS::ContrailV2::VirtualNetwork
+    properties:
+      name: { list_join: [ '-', [{ get_param: database_dns_zone_name }, 'network' ] ] }
+      network_ipam_refs: [ { get_resource: database_ipam } ]
+      network_ipam_refs_data: [
+        {
+          network_ipam_refs_data_ipam_subnets: [
+            {
+              network_ipam_refs_data_ipam_subnets_subnet_name: { list_join: [ '-', [ { get_param: database_dns_zone_name }, "subnet" ] ] },
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { str_split: ['/', { get_param: database_network_cidr }, 0] },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { str_split: ['/', { get_param: database_network_cidr }, 1] },
+                },
+              network_ipam_refs_data_ipam_subnets_enable_dhcp: 'true',
+            }
+          ]
+        }
+      ]
+
+  app_dns_suffix:
+    type: OS::Heat::Value
+    properties:
+      value:
+        list_join: [ '-', [ { str_split: [ '.', { get_param: database_dns_zone_name }, 0 ] }, 'app', 'vDNS' ] ]
+      type: string
+
+  app_vdns:
+    type: OS::ContrailV2::VirtualDns
+    properties:
+      name: { get_attr: [ app_dns_suffix, value ] }
+      virtual_DNS_data:
+        {
+          virtual_DNS_data_domain_name: { get_param: app_dns_zone_name },
+          virtual_DNS_data_default_ttl_seconds: 86400,
+          virtual_DNS_data_dynamic_records_from_client: true,
+          virtual_DNS_data_reverse_resolution: true,
+        }
+      domain: { get_param: domain }
+
+  app_ipam:
+    type: OS::ContrailV2::NetworkIpam
+    properties:
+      name: { list_join: [ '-', [ { get_param: app_dns_zone_name }, 'ipam' ] ] }
+      network_ipam_mgmt:
+        {
+          network_ipam_mgmt_ipam_dns_method: 'virtual-dns-server',
+          network_ipam_mgmt_ipam_dns_server:
+            {
+              network_ipam_mgmt_ipam_dns_server_virtual_dns_server_name: { list_join: [ ':', { get_attr: [ app_vdns, fq_name ] } ] },
+            },
+        }
+      virtual_DNS_refs: [ { get_resource: app_vdns } ]
+
+  app_network:
+    type: OS::ContrailV2::VirtualNetwork
+    properties:
+      name: { list_join: [ '-', [ { get_param: app_dns_zone_name }, 'network' ] ] }
+      network_ipam_refs: [ { get_resource: app_ipam } ]
+      network_ipam_refs_data: [
+        {
+          network_ipam_refs_data_ipam_subnets: [
+            {
+              network_ipam_refs_data_ipam_subnets_subnet_name: { list_join: [ '-', [ { get_param: app_dns_zone_name }, "subnet" ] ] },
+              network_ipam_refs_data_ipam_subnets_subnet:
+                {
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix: { str_split: ['/', { get_param: app_network_cidr }, 0] },
+                  network_ipam_refs_data_ipam_subnets_subnet_ip_prefix_len: { str_split: ['/', { get_param: app_network_cidr }, 1] },
+                },
+              network_ipam_refs_data_ipam_subnets_enable_dhcp: 'true',
+            }
+          ]
+        }
+      ]
+
+outputs:
+  database_network_id:
+    description: The uuid of database network
+    value: { get_resource: database_network }
+  database_ipam_attr:
+    description: The uuid of database subnet
+    value: { get_attr: [ database_network, network_ipam_refs, 0, attr ] }
+  database_dns_zone_id:
+    description: The uuid of refapp DB DNS zone
+    value: { get_resource: database_vdns }
+  app_network_id:
+    description: The uuid of app network
+    value: { get_resource: app_network }
+  app_ipam_attr:
+    description: The uuid of database subnet
+    value: { get_attr: [ app_network, network_ipam_refs, 0, attr ] }
+  app_dns_zone_id:
+    description: The uuid of refapp APP DNS zone
+    value: { get_resource: app_vdns }

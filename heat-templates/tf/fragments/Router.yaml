@@ -1,0 +1,31 @@
+heat_template_version: queens
+
+parameters:
+
+  public_network_id:
+    type: string
+    default: 'public'
+  database_subnet_id:
+    type: string
+  app_subnet_id:
+    type: string
+
+resources:
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: { get_param: public_network_id }
+
+  database_router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_param: database_subnet_id }
+
+  app_router_iface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router: { get_resource: router }
+      subnet: { get_param: app_subnet_id }

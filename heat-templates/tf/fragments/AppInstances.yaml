@@ -1,0 +1,397 @@
+heat_template_version: queens
+
+parameters:
+
+  key_name:
+    type: string
+    description: Name of keypair to assign to servers
+  image:
+    type: string
+    description: Name of image to use for servers
+  flavor:
+    type: string
+    description: Flavor to use for servers
+  server_tags:
+    type: json
+    description: Tags for servers
+    default: ["openstack.lcm.mirantis.com:prober"]
+  app_network_id:
+    type: string
+  app_subnet_id:
+    type: string
+  public_network_id:
+    type: string
+  instance_01_az:
+    type: string
+    default: 'nova'
+  instance_02_az:
+    type: string
+    default: 'nova'
+  instance_03_az:
+    type: string
+    default: 'nova'
+  instance_04_az:
+    type: string
+    default: 'nova'
+  database_admin_password:
+    type: string
+  metadata_database_vip:
+    type: string
+    default: ''
+  app_database_password:
+    type: string
+  app_docker_image:
+    type: string
+    default: 'httpd:2.4-alpine'
+    description: The link to docker image with App
+  app_port:
+    type: number
+    default: 8000
+  boot_timeout:
+    type: number
+    description: Boot timeout for instance
+    default: 3600
+  one_more_app_listener:
+    type: string
+    description: You can specify "yes" to deploy the stack with one more app LB pool member.
+    default: 'no'
+  app_lb_algorithm:
+    type: string
+    description: Algorithm for App loadbalancer
+    default: ROUND_ROBIN
+  app_lb_protocol:
+    type: string
+    description: Protocol for App loadbalancer
+    default: HTTP
+
+conditions:
+  deploy_additional_app_listener:
+    equals:
+    - get_param: one_more_app_listener
+    - 'yes'
+
+resources:
+
+  boot_config:
+    type: OS::Heat::CloudConfig
+    properties:
+      cloud_config:
+        write_files:
+        - path: /tmp/.service_lib
+          content: { get_file: ../../scripts/service_lib }
+
+  software_config_01:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../../scripts/service_boot.sh }
+          params:
+            $node_number: '01'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_01:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+      - config: {get_resource: boot_config}
+      - config: {get_resource: software_config_01}
+
+  software_config_02:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../../scripts/service_boot.sh }
+          params:
+            $node_number: '02'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_02:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+      - config: {get_resource: boot_config}
+      - config: {get_resource: software_config_02}
+
+  software_config_03:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../../scripts/service_boot.sh }
+          params:
+            $node_number: '03'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_03:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+      - config: {get_resource: boot_config}
+      - config: {get_resource: software_config_03}
+
+  software_config_04:
+    type: OS::Heat::SoftwareConfig
+    condition: deploy_additional_app_listener
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: { get_file: ../../scripts/service_boot.sh }
+          params:
+            $node_number: '04'
+            $wait_condition_notify: { get_attr: [ wait_handle, curl_cli ] }
+            $node_01_ip: { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }
+            $node_02_ip: { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }
+            $node_03_ip: { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }
+            $database_admin_password: { get_param: database_admin_password }
+            $service_type: "app"
+            $database_vip: { get_param: metadata_database_vip }
+            $app_database_password: { get_param: app_database_password }
+            $app_docker_image: { get_param: app_docker_image }
+            $app_port: { get_param: app_port }
+
+  install_config_agent_04:
+    type: "OS::Heat::MultipartMime"
+    condition: deploy_additional_app_listener
+    properties:
+      parts:
+      - config: {get_resource: boot_config}
+      - config: {get_resource: software_config_04}
+
+  app_group:
+   type: OS::Nova::ServerGroup
+   properties:
+     name:  "db-group"
+     policies: [ 'soft-anti-affinity' ]
+
+  server-01:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_01_az }
+      networks:
+        - port: { get_resource: private_server_01_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_01}
+      tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: app_group }
+
+  server-02:
+    depends_on:
+      - server-01
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_02_az }
+      networks:
+        - port: { get_resource: private_server_02_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_02}
+      tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: app_group }
+
+  server-03:
+    depends_on:
+      - server-01
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_03_az }
+      networks:
+        - port: { get_resource: private_server_03_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_03}
+      tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: app_group }
+
+  server-04:
+    depends_on:
+      - server-01
+    type: OS::Nova::Server
+    condition: deploy_additional_app_listener
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+      key_name: { get_param: key_name }
+      availability_zone: { get_param: instance_04_az }
+      networks:
+        - port: { get_resource: private_server_04_port }
+      user_data_format: SOFTWARE_CONFIG
+      user_data: { get_resource:  install_config_agent_04}
+      tags: { get_param: server_tags }
+      scheduler_hints:
+        group: { get_resource: app_group }
+
+  private_server_01_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  private_server_02_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  private_server_03_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  private_server_04_port:
+    type: OS::Neutron::Port
+    condition: deploy_additional_app_listener
+    properties:
+      network_id: { get_param: app_network_id }
+      port_security_enabled: false
+      fixed_ips:
+        - subnet: { get_param: app_subnet_id }
+
+  wait_handle:
+    type: OS::Heat::WaitConditionHandle
+  wait_condition:
+    type: OS::Heat::WaitCondition
+    properties:
+      handle: { get_resource: wait_handle }
+      timeout: { get_param: boot_timeout }
+      count:
+        if:
+          - deploy_additional_app_listener
+          - 4
+          - 3
+
+  lb:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      vip_subnet: { get_param: app_subnet_id }
+
+  listener:
+    type: OS::Octavia::Listener
+    properties:
+      loadbalancer: {get_resource: lb}
+      protocol: {get_param: app_lb_protocol}
+      protocol_port: {get_param: app_port}
+
+  pool:
+    type: OS::Octavia::Pool
+    properties:
+      listener: {get_resource: listener}
+      lb_algorithm: {get_param: app_lb_algorithm}
+      protocol: {get_param: app_lb_protocol}
+
+  lb_monitor:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      pool: { get_resource: pool }
+      type: {get_param: app_lb_protocol}
+      delay: 5
+      max_retries: 5
+      timeout: 5
+
+  pool_member1:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-01, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  pool_member2:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-02, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  pool_member3:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-03, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  pool_member4:
+    type: OS::Octavia::PoolMember
+    condition: deploy_additional_app_listener
+    properties:
+      pool: { get_resource: pool }
+      address: { get_attr: [ server-04, first_address ]}
+      protocol_port: {get_param: app_port}
+      subnet: { get_param: app_subnet_id }
+
+  # assign a floating ip address to the load balancer
+  # pool.
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: {get_param: public_network_id}
+      port_id: {get_attr: [lb, vip_port_id]}
+
+outputs:
+  app_private_ips:
+    description: Private IP addresses of app nodes
+    value:
+      if:
+        - deploy_additional_app_listener
+        - [ { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_04_port, fixed_ips, 0, ip_address] } ]
+        - [ { get_attr: [private_server_01_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_02_port, fixed_ips, 0, ip_address] }, { get_attr: [private_server_03_port, fixed_ips, 0, ip_address] } ]
+  app_vip:
+    description: VIP address of app
+    value: { get_attr: [ lb_floating, floating_ip_address ] }
+  app_ports_data:
+    value:
+      if:
+        - deploy_additional_app_listener
+        - [ { 'id': { get_resource: private_server_01_port }, 'port': { get_attr: [ private_server_01_port ] } }, { 'id': { get_resource: private_server_02_port }, 'port': { get_attr: [ private_server_02_port ] } }, { 'id': { get_resource: private_server_03_port }, 'port': { get_attr: [ private_server_03_port ] } }, { 'id': { get_resource: private_server_04_port }, 'port': { get_attr: [ private_server_04_port ] } } ]
+        - [ { 'id': { get_resource: private_server_01_port }, 'port': { get_attr: [ private_server_01_port ] } }, { 'id': { get_resource: private_server_02_port }, 'port': { get_attr: [ private_server_02_port ] } }, { 'id': { get_resource: private_server_03_port }, 'port': { get_attr: [ private_server_03_port ] } } ]

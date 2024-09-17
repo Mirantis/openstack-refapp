@@ -1,0 +1,221 @@
+heat_template_version: queens
+
+parameters:
+  database_image:
+    type: string
+    description: Name of image to use for servers
+    default: 'Ubuntu-18.04'
+  database_network_cidr:
+    type: string
+    description: The CIDR of database network.
+    default: '10.10.10.0/24'
+  database_admin_password:
+    type: string
+    description: The root password for database
+  database_disk:
+    type: string
+    description: Dedicated disk for database
+    default: 'auto'
+  app_network_cidr:
+    type: string
+    description: The CIDR of application network.
+    default: '10.10.11.0/24'
+  cluster_public_key:
+    type: string
+    description: Public SSH key to use for cluster instances
+  cluster_private_key:
+    type: string
+    description: Private SSH key to use for cluster instances
+  database_flavor:
+    type: string
+    default: 'm1.tiny_test' # vcpu: 1, RAM: 512, disk: 5Gb
+  public_network_id:
+    type: string
+    default: 'public'
+  app_database_password:
+    type: string
+    description: The password for application database
+  app_docker_image:
+    type: string
+    default: 'mirantis.azurecr.io/openstack/openstack-refapp:0.1.9'
+    description: The link to docker image with App
+  database_docker_image:
+    type: string
+    default: mirantis.azurecr.io/openstack/extra/mariadb:10.6-focal
+  dns_nameservers:
+    type: json
+    default: []
+  app_port:
+    type: number
+    default: 8000
+  one_more_app_listener:
+    type: string
+    description: You can specify "yes" to deploy the stack with one more app LB pool member.
+    default: 'no'
+  app_lb_algorithm:
+    type: string
+    description: Algorithm for App loadbalancer
+    default: ROUND_ROBIN
+  app_lb_protocol:
+    type: string
+    description: Protocol for App loadbalancer
+    default: HTTP
+  database_lb_algorithm:
+    type: string
+    description: Algorithm for Database loadbalancer
+    default: SOURCE_IP
+  dns_zone:
+    type: string
+    description: Part of dns zone name. In case of TF shouldn't ended with '.'.
+    default: 'refapp.test'
+  db_instance_01_az:
+    type: string
+    description: Availability zone of database instance 01
+    default: 'nova'
+  db_instance_02_az:
+    type: string
+    description: Availability zone of database instance 02
+    default: 'nova'
+  db_instance_03_az:
+    type: string
+    description: Availability zone of database instance 03
+    default: 'nova'
+  app_instance_01_az:
+    type: string
+    description: Availability zone of application instance 01
+    default: 'nova'
+  app_instance_02_az:
+    type: string
+    description: Availability zone of application instance 02
+    default: 'nova'
+  app_instance_03_az:
+    type: string
+    description: Availability zone of application instance 03
+    default: 'nova'
+  app_instance_04_az:
+    type: string
+    description: Availability zone of application instance 04
+    default: 'nova'
+
+resources:
+  auxiliary:
+    type: ./fragments/Auxiliary.yaml
+    properties:
+      dns_zone: { get_param: dns_zone }
+      public_key: { get_param: cluster_public_key }
+
+  network:
+    type: ./fragments/Network.yaml
+    properties:
+      database_network_cidr: { get_param: database_network_cidr }
+      app_network_cidr: { get_param: app_network_cidr }
+      dns_nameservers: { get_param: dns_nameservers }
+      app_dns_zone_name: { get_attr: [ auxiliary, app_dns_zone_name ] }
+      database_dns_zone_name: { get_attr: [ auxiliary, database_dns_zone_name ] }
+
+  router:
+    type: ./fragments/Router.yaml
+    properties:
+      public_network_id: { get_param: public_network_id }
+      database_subnet_id: { get_attr: [ network, database_ipam_attr, ipam_subnets, 0, subnet_uuid ] }
+      app_subnet_id: { get_attr: [ network, app_ipam_attr, ipam_subnets, 0, subnet_uuid ] }
+
+  database_ports:
+    type: ./fragments/DatabasePorts.yaml
+    depends_on:
+      - network
+      - router
+    properties:
+      database_network_id: { get_attr: [ network, database_network_id ] }
+      database_subnet_id: { get_attr: [ network, database_ipam_attr, ipam_subnets, 0, subnet_uuid ] }
+      database_vdns_uuid: { get_attr: [ network, database_dns_zone_id ] }
+
+  database:
+    type: ./fragments/DatabaseInstances.yaml
+    depends_on:
+      - auxiliary
+      - database_ports
+    properties:
+      key_name: { get_attr: [auxiliary, key_pair_name] }
+      image: { get_param: database_image }
+      flavor: { get_param: database_flavor }
+      database_subnet_id: { get_attr: [ network, database_ipam_attr, ipam_subnets, 0, subnet_uuid ] }
+      database_admin_password: { get_param: database_admin_password }
+      database_disk: { get_param: database_disk }
+      database_docker_image: { get_param: database_docker_image }
+      public_network_id: { get_param: public_network_id }
+      database_lb_algorithm: { get_param: database_lb_algorithm }
+      app_database_password: { get_param: app_database_password }
+      instance_01_az: { get_param: db_instance_01_az }
+      instance_02_az: { get_param: db_instance_02_az }
+      instance_03_az: { get_param: db_instance_03_az }
+      database_ports_data: { get_attr: [ database_ports, database_ports_data ] }
+
+  app:
+    type: ./fragments/AppInstances.yaml
+    depends_on:
+      - auxiliary
+    properties:
+      key_name: { get_attr: [auxiliary, key_pair_name] }
+      image: { get_param: database_image }
+      flavor: { get_param: database_flavor }
+      database_admin_password: { get_param: database_admin_password }
+      app_network_id: { get_attr: [ network, app_network_id ] }
+      app_subnet_id: { get_attr: [ network, app_ipam_attr, ipam_subnets, 0, subnet_uuid ] }
+      public_network_id: { get_param: public_network_id }
+      metadata_database_vip: { get_attr: [ database, database_vip ] }
+      app_docker_image: { get_param: app_docker_image }
+      app_port: { get_param: app_port }
+      one_more_app_listener: { get_param: one_more_app_listener }
+      app_lb_algorithm: { get_param: app_lb_algorithm }
+      app_lb_protocol: { get_param: app_lb_protocol }
+      app_database_password: { get_param: app_database_password }
+      instance_01_az: { get_param: app_instance_01_az }
+      instance_02_az: { get_param: app_instance_02_az }
+      instance_03_az: { get_param: app_instance_03_az }
+      instance_04_az: { get_param: app_instance_04_az }
+
+  app_floatings:
+    type: ./fragments/AppFloatings.yaml
+    depends_on:
+      - app
+    properties:
+      public_network_id: { get_param: public_network_id }
+      app_dns_zone_id: { get_attr: [ network, app_dns_zone_id ] }
+      app_dns_zone_name: { get_attr: [ auxiliary, app_dns_zone_name ] }
+      app_vip: { get_attr: [ app, app_vip ] }
+      app_ports_data: { get_attr: [ app, app_ports_data ] }
+      one_more_app_listener: { get_param: one_more_app_listener }
+
+outputs:
+  database_private_ips:
+    description: Private IP addresses of the deployed database instances
+    value: { get_attr: [ database_ports, database_private_ips ] }
+  app_private_ips:
+    description: Private IP addresses of the deployed app instances
+    value: { get_attr: [ app, app_private_ips ] }
+  app_vip:
+    description: VIP address of application
+    value: { get_attr: [ app, app_vip ] }
+  app_floating_ips:
+    description: App instances floating IPs
+    value: { get_attr: [ app_floatings, app_floating_ips ] }
+  database_floating_ips:
+    description: Database instances floating IPs
+    value: { get_attr: [ database, database_floating_ips ] }
+  database_dns_zone_name:
+    description: The name for DNS zone with database refapp
+    value: { get_attr: [ auxiliary, database_dns_zone_name ] }
+  app_dns_zone_name:
+    description: The name for DNS zone with APPs refapp
+    value: { get_attr: [ auxiliary, app_dns_zone_name ] }
+  app_url:
+    description: API url for the reference application
+    value:
+      make_url:
+        scheme: http
+        host: { get_attr: [ app, app_vip ] }
+        port: { get_param: app_port }
+  cluster_private_key:
+    description: Private SSH key to use for cluster instances
+    value: { get_param: cluster_private_key }
