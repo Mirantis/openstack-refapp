@@ -126,6 +126,20 @@ resources:
         }
       ]
 
+  designate_app_zone_name:
+    type: OS::Heat::Value
+    properties:
+      value:
+        list_join: [ '', [ { get_param: app_dns_zone_name }, '.' ] ]
+      type: string
+
+  designate_app_zone:
+    type: OS::Designate::Zone
+    properties:
+      name: { get_attr: [ designate_app_zone_name, value ] }
+      description: String
+      email: refapp-admin@test.test
+
 outputs:
   database_network_id:
     description: The uuid of database network
@@ -145,3 +159,6 @@ outputs:
   app_dns_zone_id:
     description: The uuid of refapp APP DNS zone
     value: { get_resource: app_vdns }
+  designate_app_dns_zone_id:
+    description: The uuid of refapp APP DNS zone
+    value: { get_resource: designate_app_zone }

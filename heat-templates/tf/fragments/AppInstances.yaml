@@ -63,6 +63,8 @@ parameters:
     type: string
     description: Protocol for App loadbalancer
     default: HTTP
+  designate_app_dns_zone_id:
+    type: string
 
 conditions:
   deploy_additional_app_listener:
@@ -377,6 +379,14 @@ resources:
     properties:
       floating_network_id: {get_param: public_network_id}
       port_id: {get_attr: [lb, vip_port_id]}
+
+  designate_app_vip_recordset:
+    type: OS::Designate::RecordSet
+    properties:
+      name: app-vip
+      records: [ { get_attr: [ lb_floating, floating_ip_address ] } ]
+      type: A
+      zone: { get_param: designate_app_dns_zone_id }
 
 outputs:
   app_private_ips:
