@@ -9,7 +9,7 @@ why
 
 Need a reference application which is:
 - as minimal as possible re consumed resources
-- touches as much of cloud services while created or used
+- involves many cloud services while created or used
 - can be used in validation of user workloads surviving cloud LCM operations
   (update, upgrade)
 - allows for automation (has an API to work with from tests/scripts)
@@ -17,11 +17,30 @@ Need a reference application which is:
 what
 ====
 
-Will consist of database backend (single node for now), actual data on Cinder
-volume, multiple frontends with simple rest api behind Octavia
-load balancer, possibly with custom TLS cert thru Barbican and domain name
-via Designate.
-Implemented as Heat template(s).
+Current version consists of:
+
+- **Neutron** networks, subnets, routers and floating IPs for servers
+- 3 **Nova** instances running MySQL Galera cluster as Database
+
+  - Database files are kept on a separately attached **Cinder** volumes
+
+- 3 **Nova** instances running this app as API
+- **Octavia** load balancer for Database instances
+- **Octavia** load balancer for API instances
+- DNS zones and records created for the instances in **Designate**
+
+**Keystone** and **Glance** are involved implicitly.
+
+Implemented two deployment scenarios:
+
+- as OpenStack Orchestration (**Heat**) template(s)
+- as Terraform/OpenTofu configuration
+
+todo
+----
+
+- involve **Barbican** into the mix by using TLS-terminating
+  Octavia load balancer with user-supplied certificate.
 
 API ref
 =======
@@ -119,4 +138,5 @@ Delete record by its id::
 Used external components
 ========================
 
-`wait-for` script courtesy of https://github.com/Eficode/wait-for (MIT License)
+`wait-for` script used in docker compose setup
+courtesy of https://github.com/Eficode/wait-for (MIT License)
