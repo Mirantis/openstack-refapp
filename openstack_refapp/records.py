@@ -41,6 +41,12 @@ class RecordResourceCollection:
         LOG.info(f"Created record {new_rec.id} with data {new_rec.data}")
         resp.media = new_rec.to_dict()
 
+    def on_delete(self, req, resp):
+        result = req.context.session.query(Record).delete()
+        if result:
+            req.context.session.commit()
+            LOG.warning("All record were deleted")
+
 
 class RecordResource:
     def on_get(self, req, resp, id):
