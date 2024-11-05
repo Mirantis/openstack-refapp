@@ -8,7 +8,8 @@ why
 ===
 
 Need a reference application which is:
-- as minimal as possible re consumed resources
+
+- as minimal as possible regarding consumed resources
 - involves many cloud services while created or used
 - can be used in validation of user workloads surviving cloud LCM operations
   (update, upgrade)
