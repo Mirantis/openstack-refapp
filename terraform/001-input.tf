@@ -71,6 +71,11 @@ variable "db_volume_size" {
   description = "Volume size of disk for database"
   default     = 1
 }
+variable "database_lb_provider" {
+  type    = string
+  default = "amphorav2"
+  description = "The lb algorithm for database"
+}
 variable "database_lb_algorithm" {
   type        = string
   description = "LB algorithm for database"
@@ -119,6 +124,11 @@ variable "app_database" {
 variable "app_lb_algorithm" {
   type    = string
   default = "ROUND_ROBIN"
+  description = "The lb algorithm for app"
+}
+variable "app_lb_provider" {
+  type    = string
+  default = "amphorav2"
   description = "The lb algorithm for app"
 }
 variable "app_lb_protocol" {

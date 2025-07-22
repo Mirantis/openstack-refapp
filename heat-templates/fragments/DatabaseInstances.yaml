@@ -44,6 +44,10 @@ parameters:
     type: number
     description: Boot timeout for instance
     default: 3600
+  database_lb_provider:
+    type: string
+    description: Provider for Database loadbalancer
+    default: amphorav2
   database_lb_algorithm:
     type: string
     description: Algorithm for Database loadbalancer
@@ -302,6 +306,7 @@ resources:
   lb:
     type: OS::Octavia::LoadBalancer
     properties:
+      provider: { get_param: database_lb_provider }
       vip_subnet: { get_param: database_subnet_id }
 
   listener:

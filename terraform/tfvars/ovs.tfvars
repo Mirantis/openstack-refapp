@@ -1,3 +1,5 @@
 app_lb_algorithm = "ROUND_ROBIN"
 app_lb_protocol = "HTTP"
+app_lb_provider = "amphorav2"
+database_lb_provider = "amphorav2"
 database_lb_algorithm = "SOURCE_IP"

@@ -2,8 +2,9 @@
 
 # Create loadbalancer
 resource "openstack_lb_loadbalancer_v2" "app" {
-  name          = "${var.identifier}-loadbalancer-app"
-  vip_subnet_id = openstack_networking_subnet_v2.app.id
+  name                       = "${var.identifier}-loadbalancer-app"
+  loadbalancer_provider      = var.app_lb_provider
+  vip_subnet_id              = openstack_networking_subnet_v2.app.id
 }
 
 # Create listener
@@ -54,8 +55,9 @@ resource "openstack_networking_floatingip_v2" "appx" {
 
 # Create loadbalancer
 resource "openstack_lb_loadbalancer_v2" "db" {
-  name          = "${var.identifier}-loadbalancer-db"
-  vip_subnet_id = openstack_networking_subnet_v2.db.id
+  name                       = "${var.identifier}-loadbalancer-db"
+  loadbalancer_provider      = var.database_lb_provider
+  vip_subnet_id              = openstack_networking_subnet_v2.db.id
 }
 
 # Create listener

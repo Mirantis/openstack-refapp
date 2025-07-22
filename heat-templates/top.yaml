@@ -52,6 +52,10 @@ parameters:
     type: string
     description: You can specify "yes" to deploy the stack with one more app LB pool member.
     default: 'no'
+  app_lb_provider:
+    type: string
+    description: Provider for App loadbalancer
+    default: amphorav2
   app_lb_algorithm:
     type: string
     description: Algorithm for App loadbalancer
@@ -60,6 +64,10 @@ parameters:
     type: string
     description: Protocol for App loadbalancer
     default: HTTP
+  database_lb_provider:
+    type: string
+    description: Provider for Database loadbalancer
+    default: amphorav2
   database_lb_algorithm:
     type: string
     description: Algorithm for Database loadbalancer

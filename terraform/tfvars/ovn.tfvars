@@ -1,3 +1,5 @@
 app_lb_algorithm = "SOURCE_IP_PORT"
 app_lb_protocol = "TCP"
+app_lb_provider = "ovn"
+database_lb_provider = "ovn"
 database_lb_algorithm = "SOURCE_IP_PORT"

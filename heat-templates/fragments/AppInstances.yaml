@@ -55,6 +55,10 @@ parameters:
     type: string
     description: You can specify "yes" to deploy the stack with one more app LB pool member.
     default: 'no'
+  app_lb_provider:
+    type: string
+    description: Provider for App loadbalancer
+    default: amphorav2
   app_lb_algorithm:
     type: string
     description: Algorithm for App loadbalancer
@@ -349,6 +353,7 @@ resources:
   lb:
     type: OS::Octavia::LoadBalancer
     properties:
+      provider: { get_param: app_lb_provider }
       vip_subnet: { get_param: app_subnet_id }
 
   listener:
